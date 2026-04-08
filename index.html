@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAT: Pro Scoreboard Edition</title>
+    <title>FAT: Match Point Edition</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -18,17 +18,22 @@
             background-color: #313131; border: 4px solid #000; padding: 20px; width: 90%; max-width: 500px;
             text-align: center; box-shadow: 8px 8px 0px #000; position: relative;
         }
-        /* New Scoreboard Styles */
         .scoreboard {
-            display: none; justify-content: space-around; background: #222; border: 4px solid #000;
+            display: none; flex-direction: column; background: #222; border: 4px solid #000;
             padding: 10px; margin-bottom: 15px; width: 100%; max-width: 500px; box-sizing: border-box;
         }
+        .scores-row { display: flex; justify-content: space-around; width: 100%; }
         .score-box { text-align: center; flex: 1; }
-        .score-val { font-size: 24px; color: var(--mc-green); font-weight: bold; }
+        .score-val { font-size: 28px; color: var(--mc-green); font-weight: bold; }
         
         #word-display { font-size: 60px; color: var(--mc-yellow); text-shadow: 4px 4px #000; margin: 20px 0; }
-        .opp-progress { font-size: 12px; color: var(--mc-blue); margin-bottom: 5px; height: 15px; }
         
+        #spectator-screen {
+            display: none; background: #000; border: 2px dashed var(--mc-blue);
+            padding: 15px; margin-top: 10px; color: var(--mc-blue);
+        }
+        #opp-live-text { font-size: 30px; letter-spacing: 5px; min-height: 40px; color: #fff; }
+
         input {
             width: 85%; background: #4a4a4a; border: 4px solid #000; padding: 15px;
             color: white; font-size: 24px; text-align: center; outline: none;
@@ -41,6 +46,7 @@
             background: #313131; border: 4px solid #000; padding: 15px; width: 90%; max-width: 480px;
             display: none; margin-top: 10px; box-shadow: 6px 6px 0px #000;
         }
+        #setup-screen { display: none; flex-direction: column; align-items: center; }
         #adv-popup {
             position: fixed; top: 20px; right: -400px; width: 250px; background: #222;
             border: 4px solid #000; padding: 10px; transition: 0.5s; z-index: 3000;
@@ -61,42 +67,64 @@
     </div>
 
     <div id="scoreboard-ui" class="scoreboard">
-        <div class="score-box">YOU<br><span id="my-score" class="score-val">0</span></div>
-        <div style="font-size: 20px; padding-top: 10px; color: var(--mc-grey);">VS</div>
-        <div class="score-box">OPPONENT<br><span id="opp-score" class="score-val">0</span></div>
+        <div id="target-txt" style="color: var(--mc-gold); font-size: 12px; margin-bottom: 5px;">FIRST TO 5</div>
+        <div class="scores-row">
+            <div class="score-box">YOU<br><span id="my-score" class="score-val">0</span></div>
+            <div class="score-box">OPPONENT<br><span id="opp-score" class="score-val">0</span></div>
+        </div>
     </div>
 
     <div id="multi-panel" class="panel">
-        <h3>Multiplayer Hub</h3>
-        <p style="font-size:10px">Your ID:</p>
-        <input type="text" id="my-id-box" readonly style="font-size:12px; width:95%; margin-bottom:10px;">
-        <input type="text" id="join-id-box" placeholder="Paste Opponent ID..." style="font-size:14px; width:95%;">
-        <button class="mc-btn" id="connect-btn" style="width:100%; margin-top:10px;">START MATCH</button>
+        <div id="id-section">
+            <h3>Multiplayer Hub</h3>
+            <input type="text" id="my-id-box" readonly style="font-size:12px; width:95%; margin-bottom:10px;">
+            <input type="text" id="join-id-box" placeholder="Paste Opponent ID..." style="font-size:14px; width:95%;">
+            <button class="mc-btn" id="connect-btn" style="width:100%; margin-top:10px;">CONNECT</button>
+        </div>
+
+        <div id="setup-screen">
+            <h3 style="color:var(--mc-gold)">MATCH SETUP</h3>
+            <p>First player to how many points?</p>
+            <div>
+                <button class="mc-btn" onclick="setTarget(2)">2</button>
+                <button class="mc-btn" onclick="setTarget(3)">3</button>
+                <button class="mc-btn" onclick="setTarget(5)">5</button>
+                <button class="mc-btn" onclick="setTarget(7)">7</button>
+                <button class="mc-btn" onclick="setTarget(10)">10</button>
+            </div>
+        </div>
     </div>
 
     <div class="game-box">
-        <div class="opp-progress" id="opp-typing"></div>
-        <div id="word-display">WAITING...</div>
-        <input type="text" id="type-input" placeholder="Ready?" disabled>
-        <div id="timer" style="margin-top:15px; font-size:18px;">0.000s</div>
+        <div id="spectator-screen">
+            <div style="font-size: 12px;">WATCHING OPPONENT...</div>
+            <div id="opp-live-text"></div>
+        </div>
+        <div id="play-area">
+            <div id="word-display">WAITING...</div>
+            <input type="text" id="type-input" placeholder="Ready?" disabled autocomplete="off">
+            <div id="timer" style="margin-top:15px; font-size:18px;">0.000s</div>
+        </div>
     </div>
 
     <script>
         const input = document.getElementById('type-input');
         const timerText = document.getElementById('timer');
         const wordDisplay = document.getElementById('word-display');
-        const wordList = ["CREEPER", "NETHER", "DIAMOND", "BEDROCK", "REDSTONE", "VILLAGER", "STEVE", "DRAGON", "ENDMAN", "GHAST"];
-
+        const specScreen = document.getElementById('spectator-screen');
+        const playArea = document.getElementById('play-area');
+        const oppLiveText = document.getElementById('opp-live-text');
+        
+        const wordList = ["FAT", "JUDE", "MAX", "CHRIS"];
         let currentWord = "", startTime, interval, active = false, mode = 'solo';
-        let scores = { me: 0, opp: 0 };
+        let scores = { me: 0, opp: 0, target: 5 };
         let peer, conn, isHost = false;
 
         function toggle(id) {
             const p = document.getElementById(id);
-            p.style.display = p.style.display === 'flex' || p.style.display === 'block' ? 'none' : 'block';
+            p.style.display = p.style.display === 'block' ? 'none' : 'block';
         }
 
-        // --- PeerJS Setup ---
         peer = new Peer();
         peer.on('open', (id) => { document.getElementById('my-id-box').value = id; });
         
@@ -105,72 +133,109 @@
             if(id) { conn = peer.connect(id); initSocket(); }
         };
 
-        peer.on('connection', (c) => { conn = c; isHost = true; initSocket(); });
+        peer.on('connection', (c) => { 
+            conn = c; isHost = true; 
+            document.getElementById('id-section').style.display = 'none';
+            document.getElementById('setup-screen').style.display = 'flex';
+            document.getElementById('multi-panel').style.display = 'block';
+            initSocket(); 
+        });
+
+        function setTarget(num) {
+            scores.target = num;
+            conn.send({type: 'SET_GOAL', goal: num});
+            document.getElementById('multi-panel').style.display = 'none';
+            document.getElementById('scoreboard-ui').style.display = 'flex';
+            document.getElementById('target-txt').innerText = "FIRST TO " + num;
+            startRound();
+        }
 
         function initSocket() {
-            conn.on('open', () => {
-                mode = 'pvp';
-                document.getElementById('multi-panel').style.display = 'none';
-                document.getElementById('scoreboard-ui').style.display = 'flex';
-                pop("MATCH STARTED!");
-                if(isHost) nextRound();
-            });
-
             conn.on('data', (d) => {
-                if(d.type === 'W') { 
-                    currentWord = d.w; wordDisplay.innerText = d.w; 
+                if(d.type === 'SET_GOAL') {
+                    scores.target = d.goal;
+                    document.getElementById('multi-panel').style.display = 'none';
+                    document.getElementById('scoreboard-ui').style.display = 'flex';
+                    document.getElementById('target-txt').innerText = "FIRST TO " + d.goal;
+                }
+                if(d.type === 'START_MY_TURN') {
+                    specScreen.style.display = "none"; playArea.style.display = "block";
+                    currentWord = d.w; wordDisplay.innerText = d.w;
                     input.disabled = false; input.value = ""; input.focus();
                 }
-                if(d.type === 'P') { // Opponent Typing Progress
-                    document.getElementById('opp-typing').innerText = "Opponent is typing... (" + d.l + "/" + currentWord.length + ")";
+                if(d.type === 'SPECTATE') {
+                    playArea.style.display = "none"; specScreen.style.display = "block";
+                    oppLiveText.innerText = d.val;
                 }
-                if(d.type === 'F') { // Opponent Finished
-                    handleResult(d.t);
+                if(d.type === 'RESULT') {
+                    scores.me = d.s1; scores.opp = d.s2;
+                    document.getElementById('my-score').innerText = scores.me;
+                    document.getElementById('opp-score').innerText = scores.opp;
+                    pop(d.msg);
+                    checkWinner();
+                }
+                if(d.type === 'GUEST_FINISH' && isHost) {
+                    scores.opp++;
+                    updateScores("OPPONENT POINT!");
+                    if(!checkWinner()) setTimeout(startRound, 2000);
                 }
             });
         }
 
-        function nextRound() {
+        function startRound() {
             const w = wordList[Math.floor(Math.random()*wordList.length)];
-            conn.send({type:'W', w:w});
+            const p1Goes = (scores.me + scores.opp) % 2 === 0;
+            if(p1Goes) { setupMyTurn(w); conn.send({type: 'SPECTATE', val: ""}); } 
+            else { conn.send({type: 'START_MY_TURN', w: w}); setupSpectatorMode(); }
+        }
+
+        function setupMyTurn(w) {
+            specScreen.style.display = "none"; playArea.style.display = "block";
             currentWord = w; wordDisplay.innerText = w;
             input.disabled = false; input.value = ""; input.focus();
         }
 
-        // --- Core Game ---
+        function setupSpectatorMode() {
+            playArea.style.display = "none"; specScreen.style.display = "block"; oppLiveText.innerText = "";
+        }
+
         input.addEventListener('input', () => {
             const val = input.value.toUpperCase();
-            if(mode === 'pvp') conn.send({type: 'P', l: val.length});
-
+            if(conn) conn.send({type: 'SPECTATE', val: val});
             if (!active && val.length > 0) {
                 active = true; startTime = performance.now();
                 interval = setInterval(() => { timerText.innerText = ((performance.now()-startTime)/1000).toFixed(3)+"s"; }, 10);
             }
-
             if (val === currentWord) {
                 clearInterval(interval); active = false; input.disabled = true;
-                if (mode === 'pvp') {
-                    conn.send({type:'F', t: parseFloat(timerText.innerText)});
-                    pop("Round Finished! Waiting for results...");
+                if (isHost) {
+                    scores.me++; updateScores("YOU POINT!");
+                    if(!checkWinner()) setTimeout(startRound, 2000);
+                } else {
+                    conn.send({type: 'GUEST_FINISH'});
                 }
             }
         });
 
-        function handleResult(oppTime) {
-            const myTime = parseFloat(timerText.innerText);
-            if (myTime < oppTime) {
-                scores.me++; pop("YOU WIN ROUND!");
-            } else {
-                scores.opp++; pop("OPPONENT WINS ROUND!");
-            }
-            
+        function updateScores(msg) {
+            conn.send({type: 'RESULT', s1: scores.opp, s2: scores.me, msg: msg});
             document.getElementById('my-score').innerText = scores.me;
             document.getElementById('opp-score').innerText = scores.opp;
-            document.getElementById('opp-typing').innerText = "";
+            pop(msg);
+        }
 
-            if (isHost) {
-                setTimeout(nextRound, 2500);
+        function checkWinner() {
+            let winMsg = "";
+            if(scores.me >= scores.target) winMsg = "YOU WON THE MATCH!";
+            if(scores.opp >= scores.target) winMsg = "OPPONENT WON THE MATCH!";
+            
+            if(winMsg) {
+                wordDisplay.innerText = "GG!";
+                pop(winMsg);
+                input.disabled = true;
+                return true;
             }
+            return false;
         }
 
         function pop(m) {
