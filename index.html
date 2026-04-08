@@ -3,31 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAT: Total Sync Fix</title>
+    <title>FAT: Secure Connect Edition</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --mc-bg: #212121; --mc-green: #55FF55; --mc-yellow: #FFFF55; --mc-gold: #FFD700; --mc-blue: #55FFFF; }
-        body { font-family: 'Courier New', monospace; background-color: #1a1a1a; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .game-box { background-color: #313131; border: 4px solid #000; padding: 20px; width: 90%; max-width: 500px; text-align: center; box-shadow: 8px 8px 0px #000; }
+        :root { --mc-bg: #212121; --mc-green: #55FF55; --mc-red: #FF5555; --mc-yellow: #FFFF55; --mc-gold: #FFD700; --mc-blue: #55FFFF; }
+        body { font-family: 'Courier New', monospace; background-color: #1a1a1a; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; text-align: center; }
+        .game-box { background-color: #313131; border: 4px solid #000; padding: 20px; width: 90%; max-width: 500px; box-shadow: 8px 8px 0px #000; }
         .scoreboard { display: none; background: #222; border: 4px solid #000; padding: 10px; margin-bottom: 15px; width: 100%; max-width: 500px; flex-direction: column; }
         #word-display { font-size: 60px; color: var(--mc-yellow); text-shadow: 4px 4px #000; margin: 20px 0; }
+        .mc-btn { background-color: #333; color: white; border: 4px solid #000; padding: 10px 15px; cursor: pointer; margin: 5px; font-weight: bold; box-shadow: 3px 3px 0px #000; }
+        .mc-btn:active { box-shadow: 0px 0px 0px #000; transform: translate(3px, 3px); }
+        .panel { background: #313131; border: 4px solid #000; padding: 15px; width: 90%; max-width: 480px; display: none; margin-top: 10px; }
+        input { width: 85%; background: #4a4a4a; border: 4px solid #000; padding: 15px; color: white; font-size: 20px; text-align: center; outline: none; }
+        
+        /* Error Screen Style */
+        #error-overlay { display: none; color: var(--mc-red); border: 4px solid var(--mc-red); padding: 15px; background: #000; margin-top: 10px; }
         #spectator-screen { display: none; background: #000; border: 2px dashed var(--mc-blue); padding: 15px; margin-top: 10px; }
         #opp-live-text { font-size: 30px; letter-spacing: 5px; min-height: 40px; color: #fff; text-transform: uppercase; }
-        input { width: 85%; background: #4a4a4a; border: 4px solid #000; padding: 15px; color: white; font-size: 24px; text-align: center; outline: none; }
-        .mc-btn { background-color: #333; color: white; border: 4px solid #000; padding: 10px 15px; cursor: pointer; margin: 5px; font-weight: bold; }
-        .panel { background: #313131; border: 4px solid #000; padding: 15px; width: 90%; max-width: 480px; display: none; margin-top: 10px; }
-        #debug-log { font-size: 10px; color: #666; margin-top: 20px; width: 90%; text-align: left; background: #000; padding: 10px; border: 1px solid #333; height: 60px; overflow-y: scroll; }
+        #status-bar { font-size: 10px; color: #777; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div style="margin-bottom: 10px;">
         <button class="mc-btn" onclick="document.getElementById('multi-panel').style.display='block'" style="color:var(--mc-blue)">🌐 MULTIPLAYER</button>
-        <button class="mc-btn" onclick="location.reload()">🔃 RESET GAME</button>
+        <button class="mc-btn" onclick="location.reload()">🔃 REFRESH</button>
     </div>
 
     <div id="scoreboard-ui" class="scoreboard">
-        <div id="target-txt" style="color: var(--mc-gold); font-size: 12px;">FIRST TO...</div>
+        <div id="target-txt" style="color: var(--mc-gold); font-size: 12px;">SCORE TARGET</div>
         <div style="display:flex; justify-content:space-around;">
             <div>YOU: <span id="my-score" style="color:var(--mc-green)">0</span></div>
             <div>OPP: <span id="opp-score" style="color:var(--mc-green)">0</span></div>
@@ -36,14 +40,21 @@
 
     <div id="multi-panel" class="panel">
         <div id="id-section">
-            <h3>Multiplayer</h3>
-            <p style="font-size:10px;">Your ID (Send to friend):</p>
-            <input type="text" id="my-id-box" readonly style="font-size:12px; width:95%; cursor:pointer;" onclick="this.select(); document.execCommand('copy'); alert('ID Copied!');">
-            <input type="text" id="join-id-box" placeholder="Paste Friend ID..." style="font-size:14px; width:95%; margin-top:10px;">
-            <button class="mc-btn" id="connect-btn" style="width:100%; margin-top:10px;">JOIN FRIEND</button>
+            <h3>Multiplayer Hub</h3>
+            <p style="font-size:10px;">Your ID:</p>
+            <input type="text" id="my-id-box" readonly onclick="this.select(); document.execCommand('copy');" style="font-size:12px; cursor:pointer;">
+            <input type="text" id="join-id-box" placeholder="Paste Friend's ID..." style="margin-top:10px;">
+            <button class="mc-btn" id="connect-btn" style="width:100%; margin-top:10px;">JOIN GAME</button>
         </div>
-        <div id="setup-screen" style="display:none; text-align:center;">
-            <h3 style="color:var(--mc-gold)">CHOOSE SCORE LIMIT</h3>
+
+        <div id="error-overlay">
+            <h2 style="margin:0;">ERROR:</h2>
+            <p>COULD NOT JOIN GAME</p>
+            <p style="font-size:10px;">Both players must refresh their page and try a new ID.</p>
+        </div>
+
+        <div id="setup-screen" style="display:none;">
+            <h3 style="color:var(--mc-gold)">CHOOSE SCORE TARGET</h3>
             <button class="mc-btn" onclick="setTarget(3)">3</button>
             <button class="mc-btn" onclick="setTarget(5)">5</button>
             <button class="mc-btn" onclick="setTarget(10)">10</button>
@@ -52,52 +63,69 @@
 
     <div class="game-box">
         <div id="spectator-screen">
-            <div style="font-size: 12px; color:var(--mc-blue)">SPECTATING OPPONENT...</div>
+            <div style="font-size: 12px; color:var(--mc-blue)">OPPONENT IS TYPING...</div>
             <div id="opp-live-text"></div>
         </div>
         <div id="play-area">
-            <div id="word-display">READY?</div>
-            <input type="text" id="type-input" placeholder="Not Connected" disabled>
+            <div id="word-display">FAT</div>
+            <input type="text" id="type-input" placeholder="Multiplayer only" disabled>
         </div>
     </div>
 
-    <div id="debug-log">Log: Game Initialized.</div>
+    <div id="status-bar">Status: System Ready</div>
 
     <script>
-        const log = (m) => { document.getElementById('debug-log').innerHTML += `<br>> ${m}`; console.log(m); };
+        const updateStatus = (m) => document.getElementById('status-bar').innerText = "Status: " + m;
         const wordList = ["FAT", "JUDE", "MAX", "CHRIS"];
-        let peer, conn, isHost = false, scores = { me: 0, opp: 0, target: 5 }, currentWord = "";
+        let peer, conn, isHost = false, scores = { me: 0, opp: 0, target: 5 }, currentWord = "", connTimer;
 
         peer = new Peer();
-        peer.on('open', (id) => { document.getElementById('my-id-box').value = id; log("Your ID is ready."); });
-        peer.on('error', (err) => { log("ERROR: " + err.type); alert("Connection error: " + err.type); });
+        peer.on('open', (id) => { document.getElementById('my-id-box').value = id; updateStatus("ID Generated."); });
+        
+        peer.on('error', (err) => {
+            console.error(err);
+            document.getElementById('error-overlay').style.display = 'block';
+            updateStatus("Connection failed.");
+        });
 
-        // GUEST: Clicking Join
+        // GUEST SIDE
         document.getElementById('connect-btn').onclick = () => {
             const id = document.getElementById('join-id-box').value;
             if(!id) return;
-            log("Attempting to join: " + id);
+            
+            updateStatus("Attempting to connect...");
             conn = peer.connect(id);
+            
+            // Start the error timer (10 seconds)
+            connTimer = setTimeout(() => {
+                if(!conn.open) {
+                    document.getElementById('error-overlay').style.display = 'block';
+                    updateStatus("Timed out.");
+                }
+            }, 10000);
+
             bindEvents(conn);
         };
 
-        // HOST: Receiving Connection
+        // HOST SIDE
         peer.on('connection', (c) => {
-            log("Friend is connecting...");
             conn = c; isHost = true;
             document.getElementById('id-section').style.display = 'none';
             document.getElementById('setup-screen').style.display = 'block';
             document.getElementById('multi-panel').style.display = 'block';
+            updateStatus("Peer connected!");
             bindEvents(conn);
         });
 
         function bindEvents(c) {
             c.on('open', () => {
-                log("CONNECTION OPEN!");
+                clearTimeout(connTimer);
+                document.getElementById('error-overlay').style.display = 'none';
+                updateStatus("Active Match.");
                 if(!isHost) document.getElementById('word-display').innerText = "LINKED!";
             });
+
             c.on('data', (d) => {
-                log("Data received: " + d.type);
                 if(d.type === 'START') {
                     scores.target = d.goal;
                     document.getElementById('multi-panel').style.display = 'none';
@@ -118,17 +146,16 @@
                     document.getElementById('spectator-screen').style.display = 'block';
                     document.getElementById('opp-live-text').innerText = d.v;
                 }
-                if(d.type === 'WINNER') {
+                if(d.type === 'SCORE') {
                     scores.me = d.s1; scores.opp = d.s2;
                     document.getElementById('my-score').innerText = scores.me;
                     document.getElementById('opp-score').innerText = scores.opp;
-                    alert(d.m);
-                    if(isHost) setTimeout(nextRound, 2000);
+                    if(isHost) setTimeout(nextRound, 1500);
                 }
                 if(d.type === 'DONE' && isHost) {
                     scores.opp++;
-                    syncScores("OPPONENT POINT!");
-                    setTimeout(nextRound, 2000);
+                    sync();
+                    setTimeout(nextRound, 1500);
                 }
             });
         }
@@ -147,14 +174,14 @@
             const myTurn = (scores.me + scores.opp) % 2 === 0;
             if(myTurn) {
                 conn.send({type: 'LIVE', v: ""});
-                startMyTurn(w);
+                setupTurn(w);
             } else {
                 conn.send({type: 'TURN', w: w});
-                startSpec();
+                setupSpec();
             }
         }
 
-        function startMyTurn(w) {
+        function setupTurn(w) {
             document.getElementById('spectator-screen').style.display = 'none';
             document.getElementById('play-area').style.display = 'block';
             currentWord = w;
@@ -164,7 +191,7 @@
             document.getElementById('type-input').focus();
         }
 
-        function startSpec() {
+        function setupSpec() {
             document.getElementById('play-area').style.display = 'none';
             document.getElementById('spectator-screen').style.display = 'block';
             document.getElementById('opp-live-text').innerText = "";
@@ -175,13 +202,13 @@
             if(conn) conn.send({type: 'LIVE', v: val});
             if(val === currentWord) {
                 document.getElementById('type-input').disabled = true;
-                if(isHost) { scores.me++; syncScores("YOU POINT!"); setTimeout(nextRound, 2000); }
+                if(isHost) { scores.me++; sync(); setTimeout(nextRound, 1500); }
                 else { conn.send({type: 'DONE'}); }
             }
         };
 
-        function syncScores(msg) {
-            conn.send({type: 'WINNER', s1: scores.opp, s2: scores.me, m: msg});
+        function sync() {
+            conn.send({type: 'SCORE', s1: scores.opp, s2: scores.me});
             document.getElementById('my-score').innerText = scores.me;
             document.getElementById('opp-score').innerText = scores.opp;
         }
