@@ -3,35 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAT: Precision Timer Edition</title>
+    <title>FAT: Competition Edition</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --mc-bg: #212121; --mc-green: #55FF55; --mc-red: #FF5555; --mc-yellow: #FFFF55; --mc-gold: #FFD700; --mc-blue: #55FFFF; }
         body { font-family: 'Courier New', monospace; background-color: #1a1a1a; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; text-align: center; }
-        .game-box { background-color: #313131; border: 4px solid #000; padding: 20px; width: 90%; max-width: 500px; box-shadow: 8px 8px 0px #000; }
+        .game-box { background-color: #313131; border: 4px solid #000; padding: 20px; width: 90%; max-width: 500px; box-shadow: 8px 8px 0px #000; position: relative; }
         .scoreboard { display: none; background: #222; border: 4px solid #000; padding: 10px; margin-bottom: 15px; width: 100%; max-width: 500px; flex-direction: column; }
-        
-        /* High-Accuracy Timer Style */
         #master-timer { font-size: 32px; color: var(--mc-blue); font-weight: bold; margin-bottom: 10px; text-shadow: 2px 2px #000; font-variant-numeric: tabular-nums; }
-        
         #word-display { font-size: 60px; color: var(--mc-yellow); text-shadow: 4px 4px #000; margin: 10px 0; }
         .mc-btn { background-color: #333; color: white; border: 4px solid #000; padding: 10px 15px; cursor: pointer; margin: 5px; font-weight: bold; box-shadow: 3px 3px 0px #000; }
         .panel { background: #313131; border: 4px solid #000; padding: 15px; width: 90%; max-width: 480px; display: none; margin-top: 10px; }
         input { width: 85%; background: #4a4a4a; border: 4px solid #000; padding: 15px; color: white; font-size: 24px; text-align: center; outline: none; }
-        
         #spectator-screen { display: none; background: #000; border: 2px dashed var(--mc-blue); padding: 15px; margin-top: 10px; }
         #opp-live-text { font-size: 30px; color: #fff; text-transform: uppercase; }
+        .winner-pop { color: var(--mc-gold); font-size: 24px; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div style="margin-bottom: 10px;">
         <button class="mc-btn" onclick="document.getElementById('multi-panel').style.display='block'" style="color:var(--mc-blue)">🌐 MULTIPLAYER</button>
-        <button class="mc-btn" onclick="location.reload()">🔃 REFRESH</button>
+        <button class="mc-btn" onclick="location.reload()">🔃 RESET</button>
     </div>
 
     <div id="scoreboard-ui" class="scoreboard">
-        <div id="target-txt" style="color: var(--mc-gold); font-size: 12px;">SCORE TARGET</div>
+        <div id="target-txt" style="color: var(--mc-gold); font-size: 12px;">FIRST TO 0</div>
         <div style="display:flex; justify-content:space-around; font-size: 20px;">
             <div>YOU: <span id="my-score" style="color:var(--mc-green)">0</span></div>
             <div>OPP: <span id="opp-score" style="color:var(--mc-green)">0</span></div>
@@ -40,36 +37,35 @@
 
     <div id="multi-panel" class="panel">
         <div id="id-section">
-            <h3>Multiplayer Hub</h3>
-            <input type="text" id="my-id-box" readonly onclick="this.select(); document.execCommand('copy');" style="font-size:12px; cursor:pointer;">
-            <input type="text" id="join-id-box" placeholder="Paste Friend's ID..." style="margin-top:10px;">
-            <button class="mc-btn" id="connect-btn" style="width:100%; margin-top:10px;">JOIN GAME</button>
+            <input type="text" id="my-id-box" readonly onclick="this.select(); document.execCommand('copy');" style="font-size:12px; cursor:pointer; width:95%;">
+            <input type="text" id="join-id-box" placeholder="Paste ID..." style="margin-top:10px; width:95%;">
+            <button class="mc-btn" id="connect-btn" style="width:100%; margin-top:10px;">JOIN</button>
         </div>
         <div id="setup-screen" style="display:none;">
-            <h3 style="color:var(--mc-gold)">CHOOSE SCORE TARGET</h3>
+            <h3>SET GOAL</h3>
+            <button class="mc-btn" onclick="setTarget(2)">2</button>
             <button class="mc-btn" onclick="setTarget(3)">3</button>
             <button class="mc-btn" onclick="setTarget(5)">5</button>
-            <button class="mc-btn" onclick="setTarget(10)">10</button>
         </div>
     </div>
 
     <div class="game-box">
         <div id="master-timer">0.000s</div>
-
         <div id="spectator-screen">
-            <div style="font-size: 12px; color:var(--mc-blue)">SPECTATING OPPONENT...</div>
+            <div style="font-size: 12px; color:var(--mc-blue)">OPPONENT TYPING...</div>
             <div id="opp-live-text"></div>
         </div>
         <div id="play-area">
             <div id="word-display">READY?</div>
             <input type="text" id="type-input" placeholder="Waiting..." disabled autocomplete="off">
         </div>
+        <div id="round-winner" class="winner-pop"></div>
     </div>
 
     <script>
         const wordList = ["FAT", "JUDE", "MAX", "CHRIS"];
-        let peer, conn, isHost = false, scores = { me: 0, opp: 0, target: 5 };
-        let currentWord = "", startTime, timerInterval, active = false;
+        let peer, conn, isHost = false, scores = { me: 0, opp: 0, target: 3 };
+        let currentWord = "", startTime, timerInterval, active = false, myLastTime = 999, oppLastTime = 999;
 
         peer = new Peer();
         peer.on('open', (id) => { document.getElementById('my-id-box').value = id; });
@@ -102,22 +98,23 @@
                     document.getElementById('type-input').disabled = false;
                     document.getElementById('type-input').value = "";
                     document.getElementById('type-input').focus();
+                    document.getElementById('round-winner').innerText = "";
                 }
                 if(d.type === 'LIVE') {
                     showPlay(false);
                     document.getElementById('opp-live-text').innerText = d.v;
                     if(d.time) document.getElementById('master-timer').innerText = d.time + "s";
                 }
+                if(d.type === 'FINISH') {
+                    oppLastTime = parseFloat(d.time);
+                    if(isHost) checkRoundWinner();
+                }
                 if(d.type === 'SYNC') {
                     scores.me = d.s1; scores.opp = d.s2;
                     document.getElementById('my-score').innerText = scores.me;
                     document.getElementById('opp-score').innerText = scores.opp;
-                    if(isHost) setTimeout(nextRound, 2000);
-                }
-                if(d.type === 'FINISH' && isHost) {
-                    scores.opp++;
-                    syncData();
-                    setTimeout(nextRound, 2000);
+                    document.getElementById('round-winner').innerText = d.msg;
+                    if(d.gameOver) endGame(d.finalMsg);
                 }
             });
         }
@@ -127,20 +124,16 @@
             conn.send({type: 'START', goal: n});
             document.getElementById('multi-panel').style.display = 'none';
             document.getElementById('scoreboard-ui').style.display = 'flex';
+            document.getElementById('target-txt').innerText = "FIRST TO " + n;
             nextRound();
         }
 
         function nextRound() {
+            if(scores.me >= scores.target || scores.opp >= scores.target) return;
             const w = wordList[Math.floor(Math.random()*wordList.length)];
-            const myTurn = (scores.me + scores.opp) % 2 === 0;
-            document.getElementById('master-timer').innerText = "0.000s";
-            if(myTurn) {
-                conn.send({type: 'LIVE', v: "", time: "0.000"});
-                setupMyTurn(w);
-            } else {
-                conn.send({type: 'TURN', w: w});
-                showPlay(false);
-            }
+            myLastTime = 999; oppLastTime = 999;
+            conn.send({type: 'TURN', w: w});
+            setupMyTurn(w);
         }
 
         function setupMyTurn(w) {
@@ -150,6 +143,7 @@
             document.getElementById('type-input').disabled = false;
             document.getElementById('type-input').value = "";
             document.getElementById('type-input').focus();
+            document.getElementById('round-winner').innerText = "";
         }
 
         function showPlay(isTyping) {
@@ -159,41 +153,45 @@
 
         document.getElementById('type-input').oninput = (e) => {
             const val = e.target.value.toUpperCase();
-            
-            // Start precision timer on first letter
             if(!active && val.length > 0) {
-                active = true;
-                startTime = performance.now();
+                active = true; startTime = performance.now();
                 timerInterval = setInterval(() => {
                     const elapsed = ((performance.now() - startTime) / 1000).toFixed(3);
                     document.getElementById('master-timer').innerText = elapsed + "s";
                     if(conn) conn.send({type: 'LIVE', v: val, time: elapsed});
                 }, 10);
-            } else {
-                if(conn) conn.send({type: 'LIVE', v: val, time: document.getElementById('master-timer').innerText.replace('s','')});
             }
-
             if(val === currentWord) {
-                clearInterval(timerInterval);
-                active = false;
+                clearInterval(timerInterval); active = false;
+                myLastTime = parseFloat(document.getElementById('master-timer').innerText);
                 document.getElementById('type-input').disabled = true;
-                if(isHost) {
-                    scores.me++;
-                    syncData();
-                    setTimeout(nextRound, 2000);
-                } else {
-                    conn.send({type: 'FINISH'});
-                }
+                if(isHost) checkRoundWinner();
+                else conn.send({type: 'FINISH', time: myLastTime});
             }
         };
 
-        function syncData() {
-            conn.send({type: 'SYNC', s1: scores.opp, s2: scores.me});
+        function checkRoundWinner() {
+            if(myLastTime === 999 || oppLastTime === 999) return;
+            let msg = "";
+            if(myLastTime < oppLastTime) { scores.me++; msg = "YOU WERE FASTER!"; }
+            else { scores.opp++; msg = "OPPONENT WAS FASTER!"; }
+            
+            let gameOver = (scores.me >= scores.target || scores.opp >= scores.target);
+            let finalMsg = scores.me >= scores.target ? "YOU WON THE MATCH!" : "OPPONENT WON!";
+            
+            conn.send({type: 'SYNC', s1: scores.opp, s2: scores.me, msg: msg, gameOver: gameOver, finalMsg: finalMsg});
             document.getElementById('my-score').innerText = scores.me;
             document.getElementById('opp-score').innerText = scores.opp;
-            if(scores.me >= scores.target || scores.opp >= scores.target) {
-                document.getElementById('word-display').innerText = "GAME OVER";
-            }
+            document.getElementById('round-winner').innerText = msg;
+
+            if(gameOver) endGame(finalMsg);
+            else setTimeout(nextRound, 2500);
+        }
+
+        function endGame(m) {
+            document.getElementById('word-display').innerText = "GG!";
+            document.getElementById('round-winner').innerText = m;
+            document.getElementById('type-input').style.display = "none";
         }
     </script>
 </body>
