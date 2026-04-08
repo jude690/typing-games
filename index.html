@@ -3,269 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAT: Premiere Matchmaking</title>
+    <title>FAT: Premiere (Stable)</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            --cs-orange: #ff9a00; --cs-bg: #0b0c0f; --cs-panel: #16191d;
-            --cs-border: #2d3238; --cs-text: #8b929a; --cs-white: #ffffff;
-            --cs-ct: #4b92db; --cs-t: #de9b35; --cs-green: #5eb75e;
+            --cs-orange: #ff9a00; --cs-bg: #0d0e11; --cs-panel: #1b1e23;
+            --cs-border: #32383e; --cs-text: #9ba1a6; --cs-white: #ffffff;
+            --cs-ct: #5da7db; --cs-t: #de9b35; --cs-green: #4caf50; --cs-red: #ff4444;
         }
-        body {
-            background-color: var(--cs-bg); color: var(--cs-text); font-family: 'Segoe UI', sans-serif;
-            margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; text-transform: uppercase;
-            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-        }
+        body { background-color: var(--cs-bg); color: var(--cs-text); font-family: 'Segoe UI', sans-serif; margin: 0; text-transform: uppercase; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Navbar */
+        .navbar { display: flex; justify-content: space-between; align-items: center; background: #000; padding: 0 30px; height: 60px; border-bottom: 1px solid var(--cs-border); }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-item { cursor: pointer; font-weight: 800; font-size: 13px; color: var(--cs-text); border-bottom: 3px solid transparent; padding: 18px 0; }
+        .nav-item.active { color: white; border-bottom: 3px solid var(--cs-orange); }
 
-        /* Top Bar */
-        .navbar {
-            background: #000; border-bottom: 1px solid var(--cs-border);
-            display: flex; align-items: center; padding: 0 40px; height: 60px; justify-content: space-between;
-        }
-        .nav-group { display: flex; gap: 30px; height: 100%; }
-        .nav-item { 
-            display: flex; align-items: center; cursor: pointer; color: var(--cs-text); 
-            font-weight: 800; font-size: 13px; border-bottom: 3px solid transparent; transition: 0.2s;
-        }
-        .nav-item:hover, .nav-item.active { color: var(--cs-white); border-bottom: 3px solid var(--cs-orange); }
+        /* Status Bar */
+        .status-bar { background: #1a1c21; padding: 5px 30px; font-size: 10px; display: flex; gap: 15px; border-bottom: 1px solid var(--cs-border); }
+        .stat { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: grey; }
+        .dot.online { background: var(--cs-green); box-shadow: 0 0 5px var(--cs-green); }
+        .dot.offline { background: var(--cs-red); }
 
-        .app-container { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
-        .tab-view { display: none; width: 100%; max-width: 550px; flex-direction: column; }
-        .tab-view.active { display: flex; }
+        /* Layout */
+        .main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; position: relative; }
+        .tab { display: none; width: 100%; max-width: 450px; }
+        .tab.active { display: flex; flex-direction: column; }
 
-        /* Panels */
-        .panel { background: var(--cs-panel); border: 1px solid var(--cs-border); padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-        .panel-header { font-size: 18px; color: var(--cs-white); margin-bottom: 20px; font-weight: 900; letter-spacing: 1px; }
-
-        /* Inputs */
-        .cs-input { 
-            width: 100%; background: #000; border: 1px solid var(--cs-border); padding: 15px; 
-            color: #fff; margin-bottom: 15px; font-family: monospace; box-sizing: border-box; outline: none;
-        }
-        .cs-input:focus { border-color: var(--cs-orange); }
-
-        .btn-prime { 
-            background: var(--cs-orange); color: #000; border: none; width: 100%; 
-            padding: 15px; font-weight: 900; cursor: pointer; transition: 0.1s;
-        }
-        .btn-prime:hover { filter: brightness(1.2); }
-        .btn-prime:active { transform: scale(0.98); }
+        /* GUI Elements */
+        .panel { background: var(--cs-panel); border: 1px solid var(--cs-border); padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .panel-h { color: white; font-weight: 900; margin-bottom: 15px; font-size: 14px; border-left: 3px solid var(--cs-orange); padding-left: 10px; }
+        .cs-input { width: 100%; background: #000; border: 1px solid var(--cs-border); padding: 12px; color: white; margin-bottom: 10px; box-sizing: border-box; outline: none; font-family: monospace; }
+        .btn { width: 100%; padding: 12px; font-weight: 900; border: none; cursor: pointer; transition: 0.2s; margin-top: 5px; }
+        .btn-orange { background: var(--cs-orange); color: black; }
+        .btn-grey { background: #2d3238; color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* Shop Grid */
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .item-card { 
-            background: #111418; border: 1px solid var(--cs-border); padding: 15px; 
-            text-align: center; display: flex; flex-direction: column;
-        }
-        .item-price { color: var(--cs-green); font-family: monospace; margin: 10px 0; font-weight: bold; }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .item { background: #121417; border: 1px solid var(--cs-border); padding: 15px; text-align: center; }
+        .price { color: var(--cs-green); display: block; margin: 10px 0; font-weight: bold; }
 
-        /* Game UI */
-        #scoreboard { 
-            display: none; width: 100%; background: rgba(0,0,0,0.9); 
-            border: 1px solid var(--cs-border); padding: 15px; margin-bottom: 20px;
-        }
-        .score-row { display: flex; justify-content: space-between; align-items: center; font-size: 32px; font-weight: 900; }
-        .timer { color: var(--cs-orange); font-family: monospace; font-size: 24px; }
+        /* Scoreboard Overlay */
+        .score-wrap { display: none; width: 100%; max-width: 400px; background: rgba(0,0,0,0.8); border: 1px solid var(--cs-border); padding: 10px 20px; margin-bottom: 20px; }
+        .score-flex { display: flex; justify-content: space-between; align-items: center; }
+        .score-val { font-size: 28px; font-weight: 900; color: white; }
 
-        .console {
-            background: #000; border-top: 1px solid var(--cs-border); color: #00ff00;
-            font-family: monospace; font-size: 11px; height: 80px; padding: 10px; overflow-y: auto;
-        }
+        /* Console */
+        .console { position: absolute; bottom: 0; width: 100%; height: 100px; background: #000; color: #00ff00; font-family: monospace; font-size: 11px; padding: 10px; border-top: 1px solid var(--cs-border); overflow-y: auto; text-transform: none; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
-        <div class="nav-group">
-            <div class="nav-item active" onclick="showTab('play', this)">PLAY</div>
-            <div class="nav-item" onclick="showTab('shop', this)">SHOP</div>
+        <div class="nav-links">
+            <div class="nav-item active" onclick="showTab('play')">PLAY</div>
+            <div class="nav-item" onclick="showTab('shop')">SHOP</div>
         </div>
-        <div style="display: flex; gap: 20px; align-items: center;">
-            <div id="status-light" style="width:10px; height:10px; background:red; border-radius:50%;"></div>
-            <div style="color:var(--cs-green); font-weight:900;">$ <span id="wallet">0</span></div>
-        </div>
+        <div style="color:var(--cs-green); font-weight:bold;">$ <span id="money">0</span></div>
     </div>
 
-    <div class="app-container">
+    <div class="status-bar">
+        <div class="stat">SERVER: <div id="dot-server" class="dot"></div> <span id="text-server">CHECKING...</span></div>
+        <div class="stat">ROOM: <div id="dot-room" class="dot"></div> <span id="text-room">IDLE</span></div>
+    </div>
+
+    <div class="main">
         
-        <div id="scoreboard" class="panel">
-            <div class="score-row">
-                <div style="color:var(--cs-ct)" id="ui-name-me">CT: <span id="s-me">0</span></div>
-                <div class="timer" id="timer">0.000</div>
-                <div style="color:var(--cs-t)" id="ui-name-opp"><span id="s-opp">0</span> :T</div>
+        <div id="scoreboard" class="score-wrap">
+            <div class="score-flex">
+                <div style="color:var(--cs-ct)">CT <span id="sc-me" class="score-val">0</span></div>
+                <div id="timer" style="color:var(--cs-orange); font-family:monospace; font-size:20px;">0.000</div>
+                <div style="color:var(--cs-t)"><span id="sc-opp" class="score-val">0</span> T</div>
             </div>
         </div>
 
-        <div id="tab-play" class="tab-view active">
-            <div class="panel" id="lobby">
-                <div class="panel-header">PRE-MATCH LOBBY</div>
-                <input type="text" id="room-id" class="cs-input" placeholder="LOBBY CODE (E.G. JUDE99)">
+        <div id="tab-play" class="tab active">
+            <div class="panel" id="lobby-ui">
+                <div class="panel-h">MATCHMAKING</div>
+                <input type="text" id="room-id" class="cs-input" placeholder="LOBBY NAME (e.g. JUDE123)">
                 <div style="display:flex; gap:10px;">
-                    <button class="btn-prime" onclick="initNet(true)" style="background:#2d3238; color:white;">HOST</button>
-                    <button class="btn-prime" onclick="initNet(false)">JOIN</button>
+                    <button class="btn btn-grey" id="host-btn" onclick="init(true)">HOST</button>
+                    <button class="btn btn-orange" id="join-btn" onclick="init(false)">JOIN</button>
                 </div>
-                <div id="host-controls" style="display:none; margin-top:20px; border-top:1px solid #333; padding-top:20px;">
-                    <button class="btn-prime" onclick="startMatch()">START MATCH (BO3)</button>
+                <div id="host-tools" style="display:none; margin-top:15px; border-top:1px solid #333; padding-top:15px;">
+                    <button class="btn btn-orange" onclick="startMatch()">START BO3</button>
                 </div>
             </div>
 
-            <div id="game-view" style="display:none; text-align:center; width:100%;">
-                <h1 id="target-word" style="font-size:70px; color:white; margin:20px 0;">READY?</h1>
-                <input type="text" id="type-input" class="cs-input" style="text-align:center; font-size:30px;" placeholder="..." autocomplete="off">
-                <div id="spec-view" style="display:none; border: 1px dashed var(--cs-orange); padding:20px;">
-                    <div style="font-size:10px; color:var(--cs-orange);">OPPONENT TYPING...</div>
+            <div id="game-ui" style="display:none; text-align:center;">
+                <div id="word" style="font-size:60px; font-weight:900; color:white; margin-bottom:20px;">READY?</div>
+                <input type="text" id="type-box" class="cs-input" style="text-align:center; font-size:24px;" placeholder="TYPE..." autocomplete="off">
+                <div id="opp-view" style="display:none; border:1px dashed var(--cs-orange); padding:20px;">
+                    <div style="font-size:10px; color:var(--cs-orange); margin-bottom:5px;">OPPONENT IS TYPING...</div>
                     <div id="opp-text" style="font-size:32px; color:white; min-height:40px;"></div>
                 </div>
-                <div id="round-result" style="margin-top:20px; color:var(--cs-orange); font-weight:bold; font-size:20px;"></div>
+                <div id="msg" style="margin-top:15px; color:var(--cs-orange); font-weight:bold;"></div>
             </div>
         </div>
 
-        <div id="tab-shop" class="tab-view">
+        <div id="tab-shop" class="tab">
             <div class="panel">
-                <div class="panel-header">EQUIPMENT SHOP</div>
+                <div class="panel-h">ITEM SHOP</div>
                 <div class="shop-grid">
-                    <div class="item-card">
-                        <span>[PREMIUM] TAG</span>
-                        <span class="item-price">$500</span>
-                        <button class="btn-prime" onclick="buy('tag', '[PREMIUM]', 500)" style="font-size:10px;">BUY</button>
+                    <div class="item">
+                        <span>RED NAME</span>
+                        <span class="price">$250</span>
+                        <button class="btn btn-orange" style="font-size:10px; padding:5px;" onclick="buy('red', 250)">BUY</button>
                     </div>
-                    <div class="item-card">
-                        <span style="color: gold;">GOLD NAME</span>
-                        <span class="item-price">$1000</span>
-                        <button class="btn-prime" onclick="buy('color', 'gold', 1000)" style="font-size:10px;">BUY</button>
+                    <div class="item">
+                        <span style="color:gold;">GOLD NAME</span>
+                        <span class="price">$1000</span>
+                        <button class="btn btn-orange" style="font-size:10px; padding:5px;" onclick="buy('gold', 1000)">BUY</button>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 
-    <div class="console" id="logs">Connecting to master server...</div>
+    <div class="console" id="log">SYSTEM INITIALIZING...</div>
 
     <script>
-        let peer, conn, isHost = false, myScore = 0, oppScore = 0;
-        let curWord = "", startTime, tInt, myT = 999, oppT = 999;
-        let bal = parseInt(localStorage.getItem('cs_bal')) || 0;
-        let myItems = JSON.parse(localStorage.getItem('cs_items')) || { tag: '', color: '#fff' };
+        let peer, conn, isHost = false, myS = 0, oppS = 0;
+        let curWord = "", startT, tInt, myT = 999, oppT = 999;
+        let bal = parseInt(localStorage.getItem('f_bal')) || 0;
 
-        function log(m) { const l = document.getElementById('logs'); l.innerHTML += `<div>> ${m}</div>`; l.scrollTop = l.scrollHeight; }
-        function updateBal(n) { bal += n; localStorage.setItem('cs_bal', bal); document.getElementById('wallet').innerText = bal; }
-        updateBal(0);
-
-        function showTab(id, el) {
-            document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(v => v.classList.remove('active'));
-            document.getElementById('tab-'+id).classList.add('active');
-            el.classList.add('active');
+        function log(m) { const l = document.getElementById('log'); l.innerHTML += `<div>> ${m}</div>`; l.scrollTop = l.scrollHeight; }
+        function showTab(t) {
+            document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+            document.getElementById('tab-'+t).classList.add('active');
+            event.target.classList.add('active');
         }
 
-        // --- THE NETWORK FIX ---
-        function initNet(host) {
-            const rawId = document.getElementById('room-id').value.trim().toLowerCase();
-            if(!rawId) return alert("Enter a code!");
+        function updateBal(n) { bal += n; localStorage.setItem('f_bal', bal); document.getElementById('money').innerText = bal; }
+        updateBal(0);
+
+        // --- NETWORK FIX & DEBUG ---
+        function setStatus(type, status, text) {
+            const dot = document.getElementById('dot-'+type);
+            const txt = document.getElementById('text-'+text ? type : type);
+            if (status === 'on') { dot.className = 'dot online'; document.getElementById('text-'+type).innerText = text || 'ONLINE'; }
+            if (status === 'off') { dot.className = 'dot offline'; document.getElementById('text-'+type).innerText = text || 'ERROR'; }
+        }
+
+        function init(hostMode) {
+            const id = document.getElementById('room-id').value.trim().toLowerCase();
+            if(!id) return alert("ENTER LOBBY NAME");
             
-            log("Attempting handshake...");
+            log("DIAGNOSING CONNECTION...");
             if(peer) peer.destroy();
-            
-            // Random salt prevents "ID Taken" errors
-            const finalId = "cs_fat_" + rawId;
-            peer = new Peer(host ? finalId : undefined, {
-                debug: 1,
-                config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]}
+
+            // We use standard Google STUN servers to bypass router blocks
+            peer = new Peer("fat_v4_" + id, {
+                config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]},
+                debug: 1
             });
 
-            peer.on('open', (id) => {
-                document.getElementById('status-light').style.background = 'green';
-                log(host ? "Lobby live: " + rawId : "Network ready.");
-                if(!host) {
-                    conn = peer.connect(finalId);
+            // Set a timeout: if server doesn't respond in 5 seconds, it's a Server Error
+            const netTimeout = setTimeout(() => {
+                if(!peer.open) {
+                    log("SERVER UNRESPONSIVE. PeerJS Cloud might be down.", "off");
+                    setStatus('server', 'off', 'TIMED OUT');
+                }
+            }, 5000);
+
+            peer.on('open', () => {
+                clearTimeout(netTimeout);
+                setStatus('server', 'on');
+                setStatus('room', 'on', hostMode ? 'HOSTING' : 'READY');
+                log(hostMode ? "LOBBY CREATED" : "CONNECTED TO CLOUD");
+                if(!hostMode) {
+                    log("LOOKING FOR HOST...");
+                    conn = peer.connect("fat_v4_" + id);
                     setup(conn);
                 }
             });
 
             peer.on('connection', (c) => {
                 conn = c; isHost = true;
-                log("Opponent joined!");
-                document.getElementById('host-controls').style.display = 'block';
+                log("PLAYER JOINED");
+                document.getElementById('host-tools').style.display = 'block';
                 setup(conn);
             });
 
-            peer.on('error', (e) => {
-                log("Error: " + e.type);
-                document.getElementById('status-light').style.background = 'red';
-                if(e.type === 'peer-unavailable') alert("Room not found. Check the spelling!");
-                if(e.type === 'unavailable-id') alert("Room taken. Try adding a number to the end!");
+            peer.on('error', (err) => {
+                log("NET ERROR: " + err.type);
+                setStatus('server', 'off', err.type);
+                if(err.type === 'unavailable-id') alert("NAME TAKEN! TRY A DIFFERENT NAME.");
             });
         }
 
         function setup(c) {
             c.on('open', () => {
-                document.getElementById('lobby').style.display = 'none';
-                document.getElementById('game-view').style.display = 'block';
+                document.getElementById('lobby-ui').style.display = 'none';
+                document.getElementById('game-ui').style.display = 'block';
                 document.getElementById('scoreboard').style.display = 'block';
-                c.send({type: 'PROF', items: myItems});
             });
             c.on('data', (d) => {
-                if(d.type === 'PROF') {
-                    document.getElementById('ui-name-opp').style.color = d.items.color;
-                    document.getElementById('ui-name-opp').innerText = `${oppScore} :${d.items.tag} T`;
-                }
-                if(d.type === 'START') newRound();
                 if(d.type === 'WORD') {
-                    curWord = d.w; document.getElementById('target-word').innerText = d.w;
-                    document.getElementById('type-input').value = ""; document.getElementById('type-input').disabled = false;
-                    document.getElementById('type-input').focus(); document.getElementById('round-result').innerText = "";
-                    document.getElementById('type-input').style.display = 'block';
-                    document.getElementById('spec-view').style.display = 'none';
+                    curWord = d.w; document.getElementById('word').innerText = d.w;
+                    document.getElementById('type-box').value = ""; document.getElementById('type-box').disabled = false;
+                    document.getElementById('type-box').focus(); document.getElementById('type-box').style.display = 'block';
+                    document.getElementById('opp-view').style.display = 'none';
+                    document.getElementById('msg').innerText = "";
                 }
                 if(d.type === 'LIVE') {
-                    document.getElementById('type-input').style.display = 'none';
-                    document.getElementById('spec-view').style.display = 'block';
+                    document.getElementById('type-box').style.display = 'none';
+                    document.getElementById('opp-view').style.display = 'block';
                     document.getElementById('opp-text').innerText = d.v;
                     if(d.t) document.getElementById('timer').innerText = d.t;
                 }
                 if(d.type === 'DONE') { oppT = parseFloat(d.t); if(isHost) check(); }
                 if(d.type === 'SYNC') {
-                    myScore = d.s1; oppScore = d.s2;
-                    document.getElementById('s-me').innerText = myScore;
-                    document.getElementById('s-opp').innerText = oppScore;
-                    document.getElementById('round-result').innerText = d.msg;
-                    if(d.over) document.getElementById('target-word').innerText = d.fin;
+                    myS = d.s1; oppS = d.s2;
+                    document.getElementById('sc-me').innerText = myS;
+                    document.getElementById('sc-opp').innerText = oppS;
+                    document.getElementById('msg').innerText = d.msg;
+                    if(d.win) updateBal(50);
+                    if(d.over) {
+                        document.getElementById('word').innerText = d.fin;
+                        document.getElementById('type-box').style.display = 'none';
+                        if(d.fin.includes("MVP")) updateBal(200);
+                    }
                 }
             });
         }
 
-        function startMatch() { newRound(); }
-        
-        function newRound() {
-            const words = ["BOMB", "FLASH", "ENTRY", "RUSH", "ACE", "CLUTCH", "PLANT", "DEFUSE", "SMOKE"];
-            const w = words[Math.floor(Math.random()*words.length)];
+        function startMatch() { next(); }
+        function next() {
+            const list = ["BOMB", "FLASH", "ENTRY", "RUSH", "ACE", "CLUTCH", "PLANT", "DEFUSE"];
+            const w = list[Math.floor(Math.random()*list.length)];
             myT = 999; oppT = 999;
             conn.send({type: 'WORD', w: w});
-            localRound(w);
+            local(w);
         }
 
-        function localRound(w) {
-            curWord = w; document.getElementById('target-word').innerText = w;
-            document.getElementById('type-input').value = ""; document.getElementById('type-input').disabled = false;
-            document.getElementById('type-input').focus(); document.getElementById('timer').innerText = "0.000";
-            document.getElementById('type-input').style.display = 'block';
-            document.getElementById('spec-view').style.display = 'none';
+        function local(w) {
+            curWord = w; document.getElementById('word').innerText = w;
+            document.getElementById('type-box').value = ""; document.getElementById('type-box').disabled = false;
+            document.getElementById('type-box').focus(); document.getElementById('timer').innerText = "0.000";
+            document.getElementById('type-box').style.display = 'block';
+            document.getElementById('opp-view').style.display = 'none';
         }
 
-        document.getElementById('type-input').oninput = (e) => {
+        document.getElementById('type-box').oninput = (e) => {
             const v = e.target.value.toUpperCase();
             if(v.length === 1) {
-                startTime = performance.now();
+                startT = performance.now();
                 tInt = setInterval(() => {
-                    const diff = ((performance.now() - startTime) / 1000).toFixed(3);
+                    const diff = ((performance.now() - startT) / 1000).toFixed(3);
                     document.getElementById('timer').innerText = diff;
                     conn.send({type: 'LIVE', v: v, t: diff});
                 }, 10);
             }
-            conn.send({type: 'LIVE', v: v});
             if(v === curWord) {
                 clearInterval(tInt); myT = parseFloat(document.getElementById('timer').innerText);
-                document.getElementById('type-input').disabled = true;
+                document.getElementById('type-box').disabled = true;
                 if(isHost) check(); else conn.send({type: 'DONE', t: myT});
             }
         };
@@ -273,26 +269,22 @@
         function check() {
             if(myT === 999 || oppT === 999) return;
             let win = myT < oppT;
-            if(win) myScore++; else oppScore++;
-            let over = myScore >= 3 || oppScore >= 3;
-            let fin = myScore >= 3 ? "MATCH MVP (+$250)" : "MATCH LOST";
-            if(win) updateBal(50); if(myScore >= 3) updateBal(250);
-            
-            conn.send({type: 'SYNC', s1: oppScore, s2: myScore, msg: win ? "LOST" : "WON (+$50)", over: over, fin: fin});
-            document.getElementById('s-me').innerText = myScore;
-            document.getElementById('s-opp').innerText = oppScore;
-            document.getElementById('round-result').innerText = win ? "WON (+$50)" : "LOST";
-            if(over) document.getElementById('target-word').innerText = fin;
-            else setTimeout(newRound, 2000);
+            if(win) myS++; else oppS++;
+            let over = myS >= 3 || oppS >= 3;
+            let fin = myS >= 3 ? "MATCH MVP (+$200)" : "MATCH LOST";
+            conn.send({type: 'SYNC', s1: oppS, s2: myS, msg: win ? "LOST" : "WON (+$50)", over: over, fin: fin, win: !win});
+            document.getElementById('sc-me').innerText = myS;
+            document.getElementById('sc-opp').innerText = oppS;
+            document.getElementById('msg').innerText = win ? "WON (+$50)" : "LOST";
+            if(win) updateBal(50);
+            if(over) {
+                document.getElementById('word').innerText = fin;
+                if(myS >= 3) updateBal(200);
+            } else setTimeout(next, 2000);
         }
 
-        function buy(type, val, cost) {
-            if(bal >= cost) {
-                updateBal(-cost);
-                myItems[type] = val;
-                localStorage.setItem('cs_items', JSON.stringify(myItems));
-                alert("Equipped!");
-            } else alert("Need more cash!");
+        function buy(item, price) {
+            if(bal >= price) { updateBal(-price); alert("EQUIPPED!"); } else alert("NO MONEY");
         }
     </script>
 </body>
