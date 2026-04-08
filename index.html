@@ -3,67 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAT: VFX Online Edition</title>
+    <title>FAT: Pro Scoreboard Edition</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            --mc-bg: #212121;
-            --mc-green: #55FF55;
-            --mc-red: #FF5555;
-            --mc-white: #FFFFFF;
-            --mc-yellow: #FFFF55;
-            --mc-gold: #FFD700;
-            --mc-blue: #55FFFF;
+            --mc-bg: #212121; --mc-green: #55FF55; --mc-red: #FF5555;
+            --mc-white: #FFFFFF; --mc-yellow: #FFFF55; --mc-gold: #FFD700; --mc-blue: #55FFFF;
         }
-
         body {
-            font-family: 'Courier New', Courier, monospace;
-            background-color: #1a1a1a;
-            color: var(--mc-white);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px; margin: 0;
-            user-select: none;
+            font-family: 'Courier New', Courier, monospace; background-color: #1a1a1a;
+            color: var(--mc-white); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0;
         }
-
         .game-box {
-            background-color: #313131; border: 4px solid #000;
-            padding: 20px; width: 90%; max-width: 500px; text-align: center;
-            box-shadow: 8px 8px 0px #000; margin-bottom: 20px;
+            background-color: #313131; border: 4px solid #000; padding: 20px; width: 90%; max-width: 500px;
+            text-align: center; box-shadow: 8px 8px 0px #000; position: relative;
         }
-
+        /* New Scoreboard Styles */
+        .scoreboard {
+            display: none; justify-content: space-around; background: #222; border: 4px solid #000;
+            padding: 10px; margin-bottom: 15px; width: 100%; max-width: 500px; box-sizing: border-box;
+        }
+        .score-box { text-align: center; flex: 1; }
+        .score-val { font-size: 24px; color: var(--mc-green); font-weight: bold; }
+        
         #word-display { font-size: 60px; color: var(--mc-yellow); text-shadow: 4px 4px #000; margin: 20px 0; }
-        .gold-font { color: var(--mc-gold) !important; text-shadow: 0 0 15px var(--mc-gold) !important; }
-
+        .opp-progress { font-size: 12px; color: var(--mc-blue); margin-bottom: 5px; height: 15px; }
+        
         input {
-            width: 80%; background: #4a4a4a; border: 4px solid #000;
-            padding: 15px; color: white; font-size: 24px; text-align: center; outline: none;
+            width: 85%; background: #4a4a4a; border: 4px solid #000; padding: 15px;
+            color: white; font-size: 24px; text-align: center; outline: none;
         }
-
         .mc-btn {
-            background-color: #333; color: white; border: 4px solid #000;
-            padding: 10px 15px; cursor: pointer; margin: 5px; box-shadow: 3px 3px 0px #000;
-            font-family: 'Courier New', monospace; font-weight: bold;
+            background-color: #333; color: white; border: 4px solid #000; padding: 10px 15px;
+            cursor: pointer; margin: 5px; box-shadow: 3px 3px 0px #000; font-family: inherit; font-weight: bold;
         }
-
         .panel {
-            background: #313131; border: 4px solid #000; padding: 15px;
-            width: 90%; max-width: 480px; display: none; margin-top: 10px; box-shadow: 6px 6px 0px #000;
+            background: #313131; border: 4px solid #000; padding: 15px; width: 90%; max-width: 480px;
+            display: none; margin-top: 10px; box-shadow: 6px 6px 0px #000;
         }
-
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .shop-item { background: #444; border: 3px solid #000; padding: 10px; cursor: pointer; font-size: 12px; }
-        .owned { color: var(--mc-green); border-color: var(--mc-green); opacity: 0.6; pointer-events: none; }
-
         #adv-popup {
             position: fixed; top: 20px; right: -400px; width: 250px; background: #222;
             border: 4px solid #000; padding: 10px; transition: 0.5s; z-index: 3000;
         }
         #adv-popup.show { right: 20px; }
-        
-        .xp-bar { width: 100%; height: 10px; background: #000; margin: 10px 0; border: 2px solid #555; }
-        #xp-fill { height: 100%; width: 0%; background: var(--mc-green); transition: 0.3s; }
     </style>
 </head>
 <body>
@@ -74,37 +56,28 @@
     </div>
 
     <div style="margin-bottom: 10px;">
-        <button class="mc-btn" onclick="toggle('multi-panel')" style="color:var(--mc-blue)">🌐 ONLINE</button>
-        <button class="mc-btn" onclick="toggle('shop-panel')" style="color:var(--mc-gold)">🛒 SHOP</button>
+        <button class="mc-btn" onclick="toggle('multi-panel')" style="color:var(--mc-blue)">🌐 MULTIPLAYER</button>
         <button class="mc-btn" onclick="location.reload()">🔃 RESET</button>
+    </div>
+
+    <div id="scoreboard-ui" class="scoreboard">
+        <div class="score-box">YOU<br><span id="my-score" class="score-val">0</span></div>
+        <div style="font-size: 20px; padding-top: 10px; color: var(--mc-grey);">VS</div>
+        <div class="score-box">OPPONENT<br><span id="opp-score" class="score-val">0</span></div>
     </div>
 
     <div id="multi-panel" class="panel">
         <h3>Multiplayer Hub</h3>
-        <p style="font-size:10px">Copy your ID and send it to your friend:</p>
-        <input type="text" id="my-id-box" readonly style="font-size:12px; width:90%; height:auto; margin-bottom:10px;">
-        <input type="text" id="join-id-box" placeholder="Paste Friend's ID here..." style="font-size:14px; width:90%; height:auto;">
-        <button class="mc-btn" id="connect-btn">CONNECT</button>
-    </div>
-
-    <div id="shop-panel" class="panel">
-        <h3 style="color:var(--mc-gold)">Black Market</h3>
-        <div class="shop-grid">
-            <div class="shop-item" onclick="buy('gold', 50)" id="item-gold"><b>GOLD SKIN</b><br>💰50</div>
-            <div class="shop-item" onclick="buy('boost', 150)" id="item-boost"><b>XP BOOST</b><br>💰150</div>
-        </div>
+        <p style="font-size:10px">Your ID:</p>
+        <input type="text" id="my-id-box" readonly style="font-size:12px; width:95%; margin-bottom:10px;">
+        <input type="text" id="join-id-box" placeholder="Paste Opponent ID..." style="font-size:14px; width:95%;">
+        <button class="mc-btn" id="connect-btn" style="width:100%; margin-top:10px;">START MATCH</button>
     </div>
 
     <div class="game-box">
-        <div id="stats-ui">
-            <div style="display:flex; justify-content:space-between; color:var(--mc-gold); font-size:14px;">
-                <span>LVL <span id="lvl">1</span></span>
-                <span>💰 <span id="coins">0</span></span>
-            </div>
-            <div class="xp-bar"><div id="xp-fill"></div></div>
-        </div>
-        <div id="word-display">READY?</div>
-        <input type="text" id="type-input" placeholder="Click to Type..." autofocus>
+        <div class="opp-progress" id="opp-typing"></div>
+        <div id="word-display">WAITING...</div>
+        <input type="text" id="type-input" placeholder="Ready?" disabled>
         <div id="timer" style="margin-top:15px; font-size:18px;">0.000s</div>
     </div>
 
@@ -112,72 +85,99 @@
         const input = document.getElementById('type-input');
         const timerText = document.getElementById('timer');
         const wordDisplay = document.getElementById('word-display');
-        const wordList = ["CREEPER", "NETHER", "DIAMOND", "BEDROCK", "REDSTONE", "VILLAGER", "STEVE", "DRAGON"];
+        const wordList = ["CREEPER", "NETHER", "DIAMOND", "BEDROCK", "REDSTONE", "VILLAGER", "STEVE", "DRAGON", "ENDMAN", "GHAST"];
 
-        let currentWord = "START", startTime, interval, active = false, mode = 'solo';
-        let stats = { lvl: 1, xp: 0, coins: 0, xpReq: 100 };
-        let powerups = { gold: false, boost: false };
+        let currentWord = "", startTime, interval, active = false, mode = 'solo';
+        let scores = { me: 0, opp: 0 };
         let peer, conn, isHost = false;
 
         function toggle(id) {
             const p = document.getElementById(id);
-            p.style.display = p.style.display === 'block' ? 'none' : 'block';
+            p.style.display = p.style.display === 'flex' || p.style.display === 'block' ? 'none' : 'block';
         }
 
-        // Multiplayer Setup
+        // --- PeerJS Setup ---
         peer = new Peer();
         peer.on('open', (id) => { document.getElementById('my-id-box').value = id; });
+        
         document.getElementById('connect-btn').onclick = () => {
             const id = document.getElementById('join-id-box').value;
-            if(id) { conn = peer.connect(id); startNet(); }
+            if(id) { conn = peer.connect(id); initSocket(); }
         };
-        peer.on('connection', (c) => { conn = c; isHost = true; startNet(); });
 
-        function startNet() {
+        peer.on('connection', (c) => { conn = c; isHost = true; initSocket(); });
+
+        function initSocket() {
             conn.on('open', () => {
-                mode = 'pvp'; toggle('multi-panel'); pop("CONNECTED!");
-                if(isHost) sendWord();
+                mode = 'pvp';
+                document.getElementById('multi-panel').style.display = 'none';
+                document.getElementById('scoreboard-ui').style.display = 'flex';
+                pop("MATCH STARTED!");
+                if(isHost) nextRound();
             });
+
             conn.on('data', (d) => {
-                if(d.type === 'W') { currentWord = d.w; wordDisplay.innerText = d.w; reset(); }
-                if(d.type === 'F') { pop("Opponent finished: " + d.t); if(isHost) setTimeout(sendWord, 2000); }
+                if(d.type === 'W') { 
+                    currentWord = d.w; wordDisplay.innerText = d.w; 
+                    input.disabled = false; input.value = ""; input.focus();
+                }
+                if(d.type === 'P') { // Opponent Typing Progress
+                    document.getElementById('opp-typing').innerText = "Opponent is typing... (" + d.l + "/" + currentWord.length + ")";
+                }
+                if(d.type === 'F') { // Opponent Finished
+                    handleResult(d.t);
+                }
             });
         }
 
-        function sendWord() {
+        function nextRound() {
             const w = wordList[Math.floor(Math.random()*wordList.length)];
-            conn.send({type:'W', w:w}); currentWord=w; wordDisplay.innerText=w; reset();
+            conn.send({type:'W', w:w});
+            currentWord = w; wordDisplay.innerText = w;
+            input.disabled = false; input.value = ""; input.focus();
         }
 
-        function reset() { input.disabled=false; input.value=""; input.focus(); }
-
-        // Game Logic
+        // --- Core Game ---
         input.addEventListener('input', () => {
             const val = input.value.toUpperCase();
+            if(mode === 'pvp') conn.send({type: 'P', l: val.length});
+
             if (!active && val.length > 0) {
                 active = true; startTime = performance.now();
                 interval = setInterval(() => { timerText.innerText = ((performance.now()-startTime)/1000).toFixed(3)+"s"; }, 10);
             }
+
             if (val === currentWord) {
                 clearInterval(interval); active = false; input.disabled = true;
-                if (mode === 'pvp' && conn) { conn.send({type:'F', t:timerText.innerText}); }
-                else { stats.xp+=(powerups.boost?40:20); stats.coins+=10; updateUI(); setTimeout(next, 600); }
+                if (mode === 'pvp') {
+                    conn.send({type:'F', t: parseFloat(timerText.innerText)});
+                    pop("Round Finished! Waiting for results...");
+                }
             }
         });
 
-        function next() { currentWord = wordList[Math.floor(Math.random()*wordList.length)]; wordDisplay.innerText=currentWord; reset(); }
-        function updateUI() {
-            document.getElementById('coins').innerText = stats.coins;
-            document.getElementById('lvl').innerText = stats.lvl;
-            document.getElementById('xp-fill').style.width = (stats.xp % 100) + "%";
-            if(stats.xp >= 100) { stats.lvl++; stats.xp=0; pop("LEVEL UP!"); }
+        function handleResult(oppTime) {
+            const myTime = parseFloat(timerText.innerText);
+            if (myTime < oppTime) {
+                scores.me++; pop("YOU WIN ROUND!");
+            } else {
+                scores.opp++; pop("OPPONENT WINS ROUND!");
+            }
+            
+            document.getElementById('my-score').innerText = scores.me;
+            document.getElementById('opp-score').innerText = scores.opp;
+            document.getElementById('opp-typing').innerText = "";
+
+            if (isHost) {
+                setTimeout(nextRound, 2500);
+            }
         }
-        function buy(it, pr) {
-            if(stats.coins >= pr) { stats.coins-=pr; powerups[it]=true; document.getElementById('item-'+it).classList.add('owned');
-            if(it==='gold') wordDisplay.classList.add('gold-font'); updateUI(); }
+
+        function pop(m) {
+            document.getElementById('p-name').innerText = m;
+            document.getElementById('adv-popup').classList.add('show');
+            setTimeout(() => document.getElementById('adv-popup').classList.remove('show'), 2000);
         }
-        function pop(m) { document.getElementById('p-name').innerText = m; document.getElementById('adv-popup').classList.add('show'); setTimeout(()=>document.getElementById('adv-popup').classList.remove('show'), 3000); }
-        next();
     </script>
 </body>
 </html>
