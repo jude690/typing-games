@@ -3,173 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAT: Master Sync Edition</title>
+    <title>FAT: Total Sync Fix</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root {
-            --mc-bg: #212121; --mc-green: #55FF55; --mc-red: #FF5555;
-            --mc-white: #FFFFFF; --mc-yellow: #FFFF55; --mc-gold: #FFD700; --mc-blue: #55FFFF;
-        }
-        body {
-            font-family: 'Courier New', Courier, monospace; background-color: #1a1a1a;
-            color: var(--mc-white); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0;
-        }
-        .game-box {
-            background-color: #313131; border: 4px solid #000; padding: 20px; width: 90%; max-width: 500px;
-            text-align: center; box-shadow: 8px 8px 0px #000; position: relative;
-        }
-        .scoreboard {
-            display: none; flex-direction: column; background: #222; border: 4px solid #000;
-            padding: 10px; margin-bottom: 15px; width: 100%; max-width: 500px; box-sizing: border-box;
-        }
-        .scores-row { display: flex; justify-content: space-around; width: 100%; }
-        .score-box { text-align: center; flex: 1; }
-        .score-val { font-size: 28px; color: var(--mc-green); font-weight: bold; }
-        
+        :root { --mc-bg: #212121; --mc-green: #55FF55; --mc-yellow: #FFFF55; --mc-gold: #FFD700; --mc-blue: #55FFFF; }
+        body { font-family: 'Courier New', monospace; background-color: #1a1a1a; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .game-box { background-color: #313131; border: 4px solid #000; padding: 20px; width: 90%; max-width: 500px; text-align: center; box-shadow: 8px 8px 0px #000; }
+        .scoreboard { display: none; background: #222; border: 4px solid #000; padding: 10px; margin-bottom: 15px; width: 100%; max-width: 500px; flex-direction: column; }
         #word-display { font-size: 60px; color: var(--mc-yellow); text-shadow: 4px 4px #000; margin: 20px 0; }
-        
-        #spectator-screen {
-            display: none; background: #000; border: 2px dashed var(--mc-blue);
-            padding: 15px; margin-top: 10px; color: var(--mc-blue);
-        }
+        #spectator-screen { display: none; background: #000; border: 2px dashed var(--mc-blue); padding: 15px; margin-top: 10px; }
         #opp-live-text { font-size: 30px; letter-spacing: 5px; min-height: 40px; color: #fff; text-transform: uppercase; }
-
-        input {
-            width: 85%; background: #4a4a4a; border: 4px solid #000; padding: 15px;
-            color: white; font-size: 24px; text-align: center; outline: none;
-        }
-        .mc-btn {
-            background-color: #333; color: white; border: 4px solid #000; padding: 10px 15px;
-            cursor: pointer; margin: 5px; box-shadow: 3px 3px 0px #000; font-family: inherit; font-weight: bold;
-        }
-        .panel {
-            background: #313131; border: 4px solid #000; padding: 15px; width: 90%; max-width: 480px;
-            display: none; margin-top: 10px; box-shadow: 6px 6px 0px #000;
-        }
-        #setup-screen { display: none; flex-direction: column; align-items: center; }
-        #adv-popup {
-            position: fixed; top: 20px; right: -400px; width: 250px; background: #222;
-            border: 4px solid #000; padding: 10px; transition: 0.5s; z-index: 3000;
-        }
-        #adv-popup.show { right: 20px; }
+        input { width: 85%; background: #4a4a4a; border: 4px solid #000; padding: 15px; color: white; font-size: 24px; text-align: center; outline: none; }
+        .mc-btn { background-color: #333; color: white; border: 4px solid #000; padding: 10px 15px; cursor: pointer; margin: 5px; font-weight: bold; }
+        .panel { background: #313131; border: 4px solid #000; padding: 15px; width: 90%; max-width: 480px; display: none; margin-top: 10px; }
+        #debug-log { font-size: 10px; color: #666; margin-top: 20px; width: 90%; text-align: left; background: #000; padding: 10px; border: 1px solid #333; height: 60px; overflow-y: scroll; }
     </style>
 </head>
 <body>
 
-    <div id="adv-popup">
-        <div style="color:var(--mc-yellow); font-weight:bold;">Advancement!</div>
-        <div id="p-name"></div>
-    </div>
-
     <div style="margin-bottom: 10px;">
-        <button class="mc-btn" onclick="toggle('multi-panel')" style="color:var(--mc-blue)">🌐 MULTIPLAYER</button>
-        <button class="mc-btn" onclick="location.reload()">🔃 RESET</button>
+        <button class="mc-btn" onclick="document.getElementById('multi-panel').style.display='block'" style="color:var(--mc-blue)">🌐 MULTIPLAYER</button>
+        <button class="mc-btn" onclick="location.reload()">🔃 RESET GAME</button>
     </div>
 
     <div id="scoreboard-ui" class="scoreboard">
-        <div id="target-txt" style="color: var(--mc-gold); font-size: 12px; margin-bottom: 5px;">WAITING FOR START...</div>
-        <div class="scores-row">
-            <div class="score-box">YOU<br><span id="my-score" class="score-val">0</span></div>
-            <div class="score-box">OPPONENT<br><span id="opp-score" class="score-val">0</span></div>
+        <div id="target-txt" style="color: var(--mc-gold); font-size: 12px;">FIRST TO...</div>
+        <div style="display:flex; justify-content:space-around;">
+            <div>YOU: <span id="my-score" style="color:var(--mc-green)">0</span></div>
+            <div>OPP: <span id="opp-score" style="color:var(--mc-green)">0</span></div>
         </div>
     </div>
 
     <div id="multi-panel" class="panel">
         <div id="id-section">
-            <h3>Multiplayer Hub</h3>
-            <p style="font-size:10px;">Your ID:</p>
-            <input type="text" id="my-id-box" readonly onclick="this.select(); document.execCommand('copy');" style="font-size:12px; width:95%; margin-bottom:10px; cursor: pointer;">
-            <input type="text" id="join-id-box" placeholder="Paste Opponent ID..." style="font-size:14px; width:95%;">
-            <button class="mc-btn" id="connect-btn" style="width:100%; margin-top:10px;">CONNECT</button>
+            <h3>Multiplayer</h3>
+            <p style="font-size:10px;">Your ID (Send to friend):</p>
+            <input type="text" id="my-id-box" readonly style="font-size:12px; width:95%; cursor:pointer;" onclick="this.select(); document.execCommand('copy'); alert('ID Copied!');">
+            <input type="text" id="join-id-box" placeholder="Paste Friend ID..." style="font-size:14px; width:95%; margin-top:10px;">
+            <button class="mc-btn" id="connect-btn" style="width:100%; margin-top:10px;">JOIN FRIEND</button>
         </div>
-
-        <div id="setup-screen">
-            <h3 style="color:var(--mc-gold)">MATCH SETUP</h3>
-            <p>First player to how many points?</p>
-            <div id="target-btns">
-                <button class="mc-btn" onclick="setTarget(2)">2</button>
-                <button class="mc-btn" onclick="setTarget(3)">3</button>
-                <button class="mc-btn" onclick="setTarget(5)">5</button>
-                <button class="mc-btn" onclick="setTarget(7)">7</button>
-                <button class="mc-btn" onclick="setTarget(10)">10</button>
-            </div>
+        <div id="setup-screen" style="display:none; text-align:center;">
+            <h3 style="color:var(--mc-gold)">CHOOSE SCORE LIMIT</h3>
+            <button class="mc-btn" onclick="setTarget(3)">3</button>
+            <button class="mc-btn" onclick="setTarget(5)">5</button>
+            <button class="mc-btn" onclick="setTarget(10)">10</button>
         </div>
     </div>
 
     <div class="game-box">
         <div id="spectator-screen">
-            <div style="font-size: 12px;">WATCHING OPPONENT...</div>
+            <div style="font-size: 12px; color:var(--mc-blue)">SPECTATING OPPONENT...</div>
             <div id="opp-live-text"></div>
         </div>
         <div id="play-area">
             <div id="word-display">READY?</div>
-            <input type="text" id="type-input" placeholder="Waiting for connection..." disabled autocomplete="off">
-            <div id="timer" style="margin-top:15px; font-size:18px;">0.000s</div>
+            <input type="text" id="type-input" placeholder="Not Connected" disabled>
         </div>
     </div>
 
-    <script>
-        const input = document.getElementById('type-input');
-        const timerText = document.getElementById('timer');
-        const wordDisplay = document.getElementById('word-display');
-        const specScreen = document.getElementById('spectator-screen');
-        const playArea = document.getElementById('play-area');
-        const oppLiveText = document.getElementById('opp-live-text');
-        
-        const wordList = ["FAT", "JUDE", "MAX", "CHRIS"];
-        let currentWord = "", startTime, interval, active = false;
-        let scores = { me: 0, opp: 0, target: 5 };
-        let peer, conn, isHost = false;
+    <div id="debug-log">Log: Game Initialized.</div>
 
-        function toggle(id) {
-            const p = document.getElementById(id);
-            p.style.display = p.style.display === 'block' ? 'none' : 'block';
-        }
+    <script>
+        const log = (m) => { document.getElementById('debug-log').innerHTML += `<br>> ${m}`; console.log(m); };
+        const wordList = ["FAT", "JUDE", "MAX", "CHRIS"];
+        let peer, conn, isHost = false, scores = { me: 0, opp: 0, target: 5 }, currentWord = "";
 
         peer = new Peer();
-        peer.on('open', (id) => { document.getElementById('my-id-box').value = id; });
-        
-        // GUEST ACTION
+        peer.on('open', (id) => { document.getElementById('my-id-box').value = id; log("Your ID is ready."); });
+        peer.on('error', (err) => { log("ERROR: " + err.type); alert("Connection error: " + err.type); });
+
+        // GUEST: Clicking Join
         document.getElementById('connect-btn').onclick = () => {
             const id = document.getElementById('join-id-box').value;
-            if(id) { 
-                conn = peer.connect(id); 
-                isHost = false;
-                setupData(conn);
+            if(!id) return;
+            log("Attempting to join: " + id);
+            conn = peer.connect(id);
+            bindEvents(conn);
+        };
+
+        // HOST: Receiving Connection
+        peer.on('connection', (c) => {
+            log("Friend is connecting...");
+            conn = c; isHost = true;
+            document.getElementById('id-section').style.display = 'none';
+            document.getElementById('setup-screen').style.display = 'block';
+            document.getElementById('multi-panel').style.display = 'block';
+            bindEvents(conn);
+        });
+
+        function bindEvents(c) {
+            c.on('open', () => {
+                log("CONNECTION OPEN!");
+                if(!isHost) document.getElementById('word-display').innerText = "LINKED!";
+            });
+            c.on('data', (d) => {
+                log("Data received: " + d.type);
+                if(d.type === 'START') {
+                    scores.target = d.goal;
+                    document.getElementById('multi-panel').style.display = 'none';
+                    document.getElementById('scoreboard-ui').style.display = 'flex';
+                    document.getElementById('target-txt').innerText = "FIRST TO " + d.goal;
+                }
+                if(d.type === 'TURN') {
+                    document.getElementById('spectator-screen').style.display = 'none';
+                    document.getElementById('play-area').style.display = 'block';
+                    currentWord = d.w;
+                    document.getElementById('word-display').innerText = d.w;
+                    document.getElementById('type-input').disabled = false;
+                    document.getElementById('type-input').value = "";
+                    document.getElementById('type-input').focus();
+                }
+                if(d.type === 'LIVE') {
+                    document.getElementById('play-area').style.display = 'none';
+                    document.getElementById('spectator-screen').style.display = 'block';
+                    document.getElementById('opp-live-text').innerText = d.v;
+                }
+                if(d.type === 'WINNER') {
+                    scores.me = d.s1; scores.opp = d.s2;
+                    document.getElementById('my-score').innerText = scores.me;
+                    document.getElementById('opp-score').innerText = scores.opp;
+                    alert(d.m);
+                    if(isHost) setTimeout(nextRound, 2000);
+                }
+                if(d.type === 'DONE' && isHost) {
+                    scores.opp++;
+                    syncScores("OPPONENT POINT!");
+                    setTimeout(nextRound, 2000);
+                }
+            });
+        }
+
+        function setTarget(n) {
+            scores.target = n;
+            conn.send({type: 'START', goal: n});
+            document.getElementById('multi-panel').style.display = 'none';
+            document.getElementById('scoreboard-ui').style.display = 'flex';
+            document.getElementById('target-txt').innerText = "FIRST TO " + n;
+            nextRound();
+        }
+
+        function nextRound() {
+            const w = wordList[Math.floor(Math.random()*wordList.length)];
+            const myTurn = (scores.me + scores.opp) % 2 === 0;
+            if(myTurn) {
+                conn.send({type: 'LIVE', v: ""});
+                startMyTurn(w);
+            } else {
+                conn.send({type: 'TURN', w: w});
+                startSpec();
+            }
+        }
+
+        function startMyTurn(w) {
+            document.getElementById('spectator-screen').style.display = 'none';
+            document.getElementById('play-area').style.display = 'block';
+            currentWord = w;
+            document.getElementById('word-display').innerText = w;
+            document.getElementById('type-input').disabled = false;
+            document.getElementById('type-input').value = "";
+            document.getElementById('type-input').focus();
+        }
+
+        function startSpec() {
+            document.getElementById('play-area').style.display = 'none';
+            document.getElementById('spectator-screen').style.display = 'block';
+            document.getElementById('opp-live-text').innerText = "";
+        }
+
+        document.getElementById('type-input').oninput = (e) => {
+            const val = e.target.value.toUpperCase();
+            if(conn) conn.send({type: 'LIVE', v: val});
+            if(val === currentWord) {
+                document.getElementById('type-input').disabled = true;
+                if(isHost) { scores.me++; syncScores("YOU POINT!"); setTimeout(nextRound, 2000); }
+                else { conn.send({type: 'DONE'}); }
             }
         };
 
-        // HOST ACTION
-        peer.on('connection', (c) => { 
-            conn = c; 
-            isHost = true; 
-            setupData(conn);
-        });
-
-        function setupData(c) {
-            c.on('open', () => {
-                pop("CONNECTED!");
-                if(isHost) {
-                    document.getElementById('id-section').style.display = 'none';
-                    document.getElementById('setup-screen').style.display = 'flex';
-                    document.getElementById('multi-panel').style.display = 'block';
-                } else {
-                    document.getElementById('id-section').style.display = 'none';
-                    wordDisplay.innerText = "LINKED!";
-                    input.placeholder = "Waiting for Host to choose score...";
-                }
-            });
-
-            c.on('data', (d) => {
-                if(d.type === 'SYNC_START') {
-                    scores.target = d.goal;
-                    startMatchUI(d.goal);
-                }
-                if(d.type === 'START_MY_TURN') {
-                    specScreen.style.display = "none"; playArea.style.display = "block";
-                    currentWord = d.w; wordDisplay.innerText = d.w;
-                    input.disabled = false; input.value = ""; input.focus();
-                }
-                if(d.type === 'SPECTATE') {
-                    playArea.style.display = "none"; specScreen.style.display = "block";
-                    oppLiveText.innerText = d.
+        function syncScores(msg) {
+            conn.send({type: 'WINNER', s1: scores.opp, s2: scores.me, m: msg});
+            document.getElementById('my-score').innerText = scores.me;
+            document.getElementById('opp-score').innerText = scores.opp;
+        }
+    </script>
+</body>
+</html>
