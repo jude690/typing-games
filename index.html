@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAT: Match Point Edition</title>
+    <title>FAT: VFX Fix Edition</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -67,7 +67,7 @@
     </div>
 
     <div id="scoreboard-ui" class="scoreboard">
-        <div id="target-txt" style="color: var(--mc-gold); font-size: 12px; margin-bottom: 5px;">FIRST TO 5</div>
+        <div id="target-txt" style="color: var(--mc-gold); font-size: 12px; margin-bottom: 5px;">SELECT GOAL...</div>
         <div class="scores-row">
             <div class="score-box">YOU<br><span id="my-score" class="score-val">0</span></div>
             <div class="score-box">OPPONENT<br><span id="opp-score" class="score-val">0</span></div>
@@ -77,7 +77,8 @@
     <div id="multi-panel" class="panel">
         <div id="id-section">
             <h3>Multiplayer Hub</h3>
-            <input type="text" id="my-id-box" readonly style="font-size:12px; width:95%; margin-bottom:10px;">
+            <p style="font-size:10px;">Your ID (Click to Copy):</p>
+            <input type="text" id="my-id-box" readonly onclick="this.select(); document.execCommand('copy'); alert('ID Copied!');" style="font-size:12px; width:95%; margin-bottom:10px; cursor: pointer;">
             <input type="text" id="join-id-box" placeholder="Paste Opponent ID..." style="font-size:14px; width:95%;">
             <button class="mc-btn" id="connect-btn" style="width:100%; margin-top:10px;">CONNECT</button>
         </div>
@@ -101,8 +102,8 @@
             <div id="opp-live-text"></div>
         </div>
         <div id="play-area">
-            <div id="word-display">WAITING...</div>
-            <input type="text" id="type-input" placeholder="Ready?" disabled autocomplete="off">
+            <div id="word-display">READY?</div>
+            <input type="text" id="type-input" placeholder="Waiting for Host..." disabled autocomplete="off">
             <div id="timer" style="margin-top:15px; font-size:18px;">0.000s</div>
         </div>
     </div>
@@ -128,35 +129,46 @@
         peer = new Peer();
         peer.on('open', (id) => { document.getElementById('my-id-box').value = id; });
         
+        // GUEST SIDE: Connects to Host
         document.getElementById('connect-btn').onclick = () => {
             const id = document.getElementById('join-id-box').value;
-            if(id) { conn = peer.connect(id); initSocket(); }
+            if(id) { 
+                conn = peer.connect(id); 
+                setupConnectionListeners(conn);
+            }
         };
 
+        // HOST SIDE: Receives Connection
         peer.on('connection', (c) => { 
             conn = c; isHost = true; 
             document.getElementById('id-section').style.display = 'none';
             document.getElementById('setup-screen').style.display = 'flex';
             document.getElementById('multi-panel').style.display = 'block';
-            initSocket(); 
+            setupConnectionListeners(conn);
         });
 
         function setTarget(num) {
             scores.target = num;
-            conn.send({type: 'SET_GOAL', goal: num});
-            document.getElementById('multi-panel').style.display = 'none';
-            document.getElementById('scoreboard-ui').style.display = 'flex';
-            document.getElementById('target-txt').innerText = "FIRST TO " + num;
+            conn.send({type: 'SYNC_START', goal: num});
+            startMatchUI(num);
             startRound();
         }
 
-        function initSocket() {
-            conn.on('data', (d) => {
-                if(d.type === 'SET_GOAL') {
+        function startMatchUI(goal) {
+            document.getElementById('multi-panel').style.display = 'none';
+            document.getElementById('scoreboard-ui').style.display = 'flex';
+            document.getElementById('target-txt').innerText = "FIRST TO " + goal;
+        }
+
+        function setupConnectionListeners(c) {
+            c.on('open', () => {
+                pop("CONNECTED!");
+            });
+
+            c.on('data', (d) => {
+                if(d.type === 'SYNC_START') {
                     scores.target = d.goal;
-                    document.getElementById('multi-panel').style.display = 'none';
-                    document.getElementById('scoreboard-ui').style.display = 'flex';
-                    document.getElementById('target-txt').innerText = "FIRST TO " + d.goal;
+                    startMatchUI(d.goal);
                 }
                 if(d.type === 'START_MY_TURN') {
                     specScreen.style.display = "none"; playArea.style.display = "block";
@@ -185,8 +197,13 @@
         function startRound() {
             const w = wordList[Math.floor(Math.random()*wordList.length)];
             const p1Goes = (scores.me + scores.opp) % 2 === 0;
-            if(p1Goes) { setupMyTurn(w); conn.send({type: 'SPECTATE', val: ""}); } 
-            else { conn.send({type: 'START_MY_TURN', w: w}); setupSpectatorMode(); }
+            if(p1Goes) { 
+                setupMyTurn(w); 
+                conn.send({type: 'SPECTATE', val: ""}); 
+            } else { 
+                conn.send({type: 'START_MY_TURN', w: w}); 
+                setupSpectatorMode(); 
+            }
         }
 
         function setupMyTurn(w) {
@@ -228,13 +245,7 @@
             let winMsg = "";
             if(scores.me >= scores.target) winMsg = "YOU WON THE MATCH!";
             if(scores.opp >= scores.target) winMsg = "OPPONENT WON THE MATCH!";
-            
-            if(winMsg) {
-                wordDisplay.innerText = "GG!";
-                pop(winMsg);
-                input.disabled = true;
-                return true;
-            }
+            if(winMsg) { wordDisplay.innerText = "GG!"; pop(winMsg); input.disabled = true; return true; }
             return false;
         }
 
