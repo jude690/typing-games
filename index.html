@@ -7,247 +7,264 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            --cs-orange: #de9b35; --cs-bg: #1b1e20; --cs-panel: #24292d;
-            --cs-border: #3c4146; --cs-text: #cccccc; --cs-white: #ffffff;
-            --cs-ct: #add1e7; --cs-t: #ebd184;
+            --cs-orange: #ff9a00; --cs-bg: #121417; --cs-panel: #1b1f23;
+            --cs-border: #32383e; --cs-text: #9ba1a6; --cs-white: #ffffff;
+            --cs-ct: #5da7db; --cs-t: #de9b35;
         }
         body {
             background-color: var(--cs-bg); color: var(--cs-text);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0;
-            text-transform: uppercase; letter-spacing: 1px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex; flex-direction: column; align-items: center; padding: 0; margin: 0;
+            height: 100vh; overflow: hidden; text-transform: uppercase;
         }
-        /* CS2 Header Style */
-        .header { width: 100%; max-width: 600px; display: flex; justify-content: space-between; border-bottom: 2px solid var(--cs-border); padding-bottom: 10px; margin-bottom: 20px; }
-        .score-container { display: none; width: 100%; max-width: 600px; background: rgba(0,0,0,0.5); border: 1px solid var(--cs-border); padding: 10px; margin-bottom: 20px; border-top: 3px solid var(--cs-orange); }
-        .score-row { display: flex; justify-content: space-around; align-items: center; }
-        .score-val { font-size: 32px; font-weight: 800; color: var(--cs-white); }
-        .timer-large { font-size: 24px; color: var(--cs-orange); font-weight: bold; font-family: monospace; }
-
-        /* Tactical UI Panels */
-        .panel { background: var(--cs-panel); border: 1px solid var(--cs-border); padding: 20px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .input-field { width: 100%; background: #141619; border: 1px solid var(--cs-border); padding: 12px; color: white; margin: 10px 0; box-sizing: border-box; outline: none; transition: 0.3s; }
-        .input-field:focus { border-color: var(--cs-orange); }
-        
-        .cs-btn {
-            background: linear-gradient(to bottom, #4a4f55, #2d3237); color: white; border: 1px solid var(--cs-border);
-            padding: 10px 20px; cursor: pointer; font-weight: bold; margin: 5px; transition: 0.2s;
+        /* Top Navigation Bar */
+        .navbar {
+            width: 100%; background: rgba(0,0,0,0.8); border-bottom: 1px solid var(--cs-border);
+            display: flex; justify-content: center; gap: 40px; padding: 15px 0; font-weight: 800; font-size: 14px;
         }
-        .cs-btn:hover { background: var(--cs-orange); color: black; border-color: white; }
-        .cs-btn-primary { background: var(--cs-orange); color: black; border: none; width: 100%; font-size: 16px; margin-top: 15px; }
+        .nav-item { cursor: pointer; color: var(--cs-text); transition: 0.2s; }
+        .nav-item:hover, .nav-item.active { color: var(--cs-white); border-bottom: 2px solid var(--cs-orange); }
 
-        /* Game Area */
-        #main-game { display: none; width: 100%; max-width: 500px; }
-        .word-box { background: rgba(0,0,0,0.8); padding: 40px; border: 1px solid var(--cs-border); margin: 20px 0; border-left: 5px solid var(--cs-orange); }
-        #word-display { font-size: 50px; font-weight: 900; color: var(--cs-white); }
+        /* Scoreboard Overlay */
+        .scoreboard-overlay {
+            display: none; margin-top: 20px; width: 400px; background: rgba(20,20,20,0.9);
+            border: 1px solid var(--cs-border); padding: 5px 20px; border-radius: 4px;
+        }
+        .score-flex { display: flex; justify-content: space-between; align-items: center; }
+        .timer-val { font-size: 28px; color: var(--cs-orange); font-family: monospace; font-weight: bold; }
+        .score-num { font-size: 32px; font-weight: 900; color: white; }
+
+        /* Main Menu Panel */
+        .main-container { margin-top: 50px; width: 90%; max-width: 450px; }
+        .panel { 
+            background: var(--cs-panel); border: 1px solid var(--cs-border); padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); border-radius: 2px;
+        }
+        .input-box {
+            width: 100%; background: #000; border: 1px solid var(--cs-border); padding: 15px;
+            color: white; margin-bottom: 20px; outline: none; box-sizing: border-box; font-size: 16px;
+        }
+        .input-box:focus { border-color: var(--cs-orange); }
+
+        .btn-prime {
+            background: var(--cs-orange); color: black; border: none; width: 100%;
+            padding: 15px; font-weight: 900; font-size: 18px; cursor: pointer; transition: 0.2s;
+        }
+        .btn-prime:hover { filter: brightness(1.2); }
+        .btn-prime:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+        /* Game Elements */
+        #game-area { display: none; width: 100%; max-width: 500px; margin-top: 40px; }
+        .word-display { font-size: 70px; font-weight: 900; color: white; margin-bottom: 30px; letter-spacing: -2px; }
+        .spec-box { display: none; background: rgba(255,154,0,0.1); border: 1px solid var(--cs-orange); padding: 20px; }
         
-        #spectator-screen { display: none; border: 2px solid var(--cs-orange); padding: 20px; background: rgba(222, 155, 53, 0.1); }
-        #opp-live-text { font-size: 30px; color: var(--cs-orange); min-height: 40px; }
-        
-        #status { font-size: 11px; color: #666; margin-top: 15px; }
-        .winner-msg { color: var(--cs-orange); font-size: 20px; font-weight: bold; margin-top: 15px; height: 30px; }
+        #status-msg { font-size: 10px; color: #555; margin-top: 10px; letter-spacing: 2px; }
+        .winner-notif { color: var(--cs-orange); font-size: 18px; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <span style="color: var(--cs-orange); font-weight: bold;">FAT // GLOBAL OFFENSIVE</span>
-        <span id="match-goal-tag">PRE-MATCH</span>
+    <div class="navbar">
+        <div class="nav-item active">PLAY</div>
+        <div class="nav-item" onclick="location.reload()">REFRESH</div>
+        <div class="nav-item">LOADOUT</div>
     </div>
 
-    <div id="scoreboard-ui" class="score-container">
-        <div class="score-row">
-            <div style="color: var(--cs-ct)">CT (YOU): <span id="my-score" class="score-val">0</span></div>
-            <div id="master-timer" class="timer-large">0.000</div>
-            <div style="color: var(--cs-t)">T (OPP): <span id="opp-score" class="score-val">0</span></div>
+    <div id="scoreboard-ui" class="scoreboard-overlay">
+        <div class="score-flex">
+            <div style="color: var(--cs-ct)">CT <span id="my-score" class="score-num">0</span></div>
+            <div id="master-timer" class="timer-val">0.000</div>
+            <div style="color: var(--cs-t)"><span id="opp-score" class="score-num">0</span> T</div>
         </div>
     </div>
 
-    <div id="multi-panel" class="panel">
-        <div id="setup-area">
-            <h2 style="margin-top: 0;">LOBBY</h2>
-            <div id="status">OFFLINE - CONNECT TO NETWORK</div>
-            <input type="text" id="custom-id-input" class="input-field" placeholder="ENTER ROOM CODE...">
-            <div style="display:flex; gap: 10px;">
-                <button class="cs-btn" id="host-btn" style="flex:1">CREATE LOBBY</button>
-                <button class="cs-btn" id="join-btn" style="flex:1">JOIN LOBBY</button>
+    <div class="main-container">
+        <div id="lobby-panel" class="panel">
+            <h1 style="margin:0 0 10px 0; font-size: 24px;">PRE-MATCH LOBBY</h1>
+            <p id="status-msg">SYSTEM: INITIALIZING NETWORK...</p>
+            
+            <input type="text" id="room-input" class="input-box" placeholder="ENTER LOBBY NAME...">
+            
+            <div style="display:flex; gap:10px;">
+                <button id="host-btn" class="btn-prime" style="background:#32383e; color:white;">HOST</button>
+                <button id="join-btn" class="btn-prime">JOIN</button>
+            </div>
+            
+            <div id="goal-selection" style="display:none; margin-top:20px; border-top:1px solid var(--cs-border); padding-top:20px;">
+                <p style="font-size:12px;">SELECT MATCH LENGTH</p>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-prime" onclick="setTarget(3)" style="font-size:14px; padding:10px;">BO3</button>
+                    <button class="btn-prime" onclick="setTarget(5)" style="font-size:14px; padding:10px;">BO5</button>
+                    <button class="btn-prime" onclick="setTarget(9)" style="font-size:14px; padding:10px;">BO9</button>
+                </div>
             </div>
         </div>
-        
-        <div id="goal-screen" style="display:none;">
-            <h3 style="color:var(--cs-orange)">SELECT MATCH LENGTH</h3>
-            <button class="cs-btn" onclick="setTarget(3)">SHORT MATCH (3)</button>
-            <button class="cs-btn" onclick="setTarget(5)">MEDIUM MATCH (5)</button>
-            <button class="cs-btn" onclick="setTarget(9)">LONG MATCH (9)</button>
-        </div>
-    </div>
 
-    <div id="main-game">
-        <div id="spectator-screen">
-            <div style="font-size: 11px; margin-bottom: 10px;">SPECTATING ENEMY...</div>
-            <div id="opp-live-text"></div>
+        <div id="game-area">
+            <div id="play-view">
+                <div id="word-target" class="word-display">READY?</div>
+                <input type="text" id="game-input" class="input-box" placeholder="TYPE TARGET WORD..." style="text-align:center; font-size:24px;">
+            </div>
+            
+            <div id="spec-view" class="spec-box">
+                <div style="font-size:12px; color:var(--cs-orange); margin-bottom:10px;">SPECTATING ENEMY...</div>
+                <div id="enemy-live-text" style="font-size:32px; color:white; min-height:40px;"></div>
+            </div>
+            
+            <div id="round-winner-box" class="winner-notif"></div>
         </div>
-        
-        <div id="play-area" class="word-box">
-            <div id="word-display">READY</div>
-            <input type="text" id="type-input" class="input-field" placeholder="TYPE HERE..." style="text-align: center; font-size: 24px;" autocomplete="off">
-        </div>
-        <div id="round-winner" class="winner-msg"></div>
     </div>
 
     <script>
-        const wordList = ["FAT", "JUDE", "MAX", "CHRIS", "BOMB", "FLASH", "ENTRY", "RUSH"];
+        const words = ["BOMB", "FLASH", "DEFUSE", "ENTRY", "RUSH", "SNIPER", "CLUTCH", "ACE"];
         let peer, conn, isHost = false, scores = { me: 0, opp: 0, target: 3 };
-        let currentWord = "", startTime, timerInterval, active = false, myLastTime = 999, oppLastTime = 999;
+        let activeWord = "", startTime, timerTask, typing = false, myTime = 999, oppTime = 999;
 
-        const statusTxt = document.getElementById('status');
-        const customIdBox = document.getElementById('custom-id-input');
+        const statusLabel = document.getElementById('status-msg');
+        const roomBox = document.getElementById('room-input');
 
-        document.getElementById('host-btn').onclick = () => startPeer(customIdBox.value.trim(), true);
-        document.getElementById('join-btn').onclick = () => {
-            startPeer(null, false);
-            setTimeout(() => {
-                conn = peer.connect(customIdBox.value.trim());
-                bindEvents(conn);
-            }, 800);
-        };
-
-        function startPeer(id, hosting) {
+        // Automatic Peer Initialization
+        function initPeer(id, hosting) {
             if(peer) peer.destroy();
-            // Unique ID helper: appends a random number if name is taken
-            peer = new Peer(id);
-            
-            peer.on('open', (openedId) => {
-                statusTxt.innerText = "LOBBY READY: " + openedId;
-                if(!hosting) statusTxt.innerText = "CONNECTING TO: " + customIdBox.value;
+            // We add a short prefix to ensure the ID is unique to our game
+            const finalId = id ? "fat_go_" + id : null;
+            peer = new Peer(finalId);
+
+            peer.on('open', (id) => {
+                statusLabel.innerText = "NETWORK ONLINE. ID: " + id.replace("fat_go_", "");
             });
 
             peer.on('connection', (c) => {
                 conn = c; isHost = true;
-                document.getElementById('setup-area').style.display = 'none';
-                document.getElementById('goal-screen').style.display = 'block';
-                bindEvents(conn);
+                document.getElementById('host-btn').style.display = 'none';
+                document.getElementById('join-btn').style.display = 'none';
+                document.getElementById('goal-selection').style.display = 'block';
+                setupEvents(conn);
             });
 
             peer.on('error', (err) => {
-                if(err.type === 'unavailable-id') {
-                    alert("ROOM NAME TAKEN. TRY ADDING A NUMBER (ex: " + customIdBox.value + "123)");
-                } else {
-                    alert("CONNECTION ERROR. REFRESH.");
-                }
+                statusLabel.innerText = "ERROR: " + err.type.toUpperCase();
+                if(err.type === 'unavailable-id') alert("ROOM NAME IN USE. ADD A NUMBER!");
             });
         }
 
-        function bindEvents(c) {
+        document.getElementById('host-btn').onclick = () => {
+            if(!roomBox.value) return alert("ENTER A ROOM NAME!");
+            initPeer(roomBox.value.trim(), true);
+        };
+
+        document.getElementById('join-btn').onclick = () => {
+            const target = roomBox.value.trim();
+            if(!target) return alert("ENTER A ROOM NAME!");
+            initPeer(null, false);
+            setTimeout(() => {
+                conn = peer.connect("fat_go_" + target);
+                setupEvents(conn);
+            }, 800);
+        };
+
+        function setupEvents(c) {
             c.on('open', () => {
-                statusTxt.innerText = "MATCH FOUND - LOADING...";
-                document.getElementById('multi-panel').style.display = 'none';
-                document.getElementById('main-game').style.display = 'block';
+                document.getElementById('lobby-panel').style.display = 'none';
+                document.getElementById('game-area').style.display = 'block';
+                document.getElementById('scoreboard-ui').style.display = 'block';
             });
-            c.on('data', (d) => {
-                if(d.type === 'START') {
-                    scores.target = d.goal;
-                    document.getElementById('scoreboard-ui').style.display = 'block';
-                    document.getElementById('match-goal-tag').innerText = "BO" + d.goal;
+
+            c.on('data', (data) => {
+                if(data.type === 'CFG') {
+                    scores.target = data.limit;
                 }
-                if(d.type === 'TURN') {
-                    updateUI(true);
-                    currentWord = d.w;
-                    document.getElementById('word-display').innerText = d.w;
-                    document.getElementById('type-input').disabled = false;
-                    document.getElementById('type-input').value = "";
-                    document.getElementById('type-input').focus();
-                    document.getElementById('round-winner').innerText = "";
+                if(data.type === 'NEW_ROUND') {
+                    setRoundUI(true);
+                    activeWord = data.word;
+                    document.getElementById('word-target').innerText = data.word;
+                    document.getElementById('game-input').disabled = false;
+                    document.getElementById('game-input').value = "";
+                    document.getElementById('game-input').focus();
+                    document.getElementById('round-winner-box').innerText = "";
                 }
-                if(d.type === 'LIVE') {
-                    updateUI(false);
-                    document.getElementById('opp-live-text').innerText = d.v;
-                    if(d.time) document.getElementById('master-timer').innerText = d.time;
+                if(data.type === 'LIVE') {
+                    setRoundUI(false);
+                    document.getElementById('enemy-live-text').innerText = data.val;
+                    if(data.t) document.getElementById('master-timer').innerText = data.t;
                 }
-                if(d.type === 'FINISH') {
-                    oppLastTime = parseFloat(d.time);
-                    if(isHost) checkRound();
+                if(data.type === 'DONE') {
+                    oppTime = parseFloat(data.t);
+                    if(isHost) compareTimes();
                 }
-                if(d.type === 'SYNC') {
-                    scores.me = d.s1; scores.opp = d.s2;
+                if(data.type === 'SYNC') {
+                    scores.me = data.s1; scores.opp = data.s2;
                     document.getElementById('my-score').innerText = scores.me;
                     document.getElementById('opp-score').innerText = scores.opp;
-                    document.getElementById('round-winner').innerText = d.msg;
-                    if(d.over) endGame(d.final);
+                    document.getElementById('round-winner-box').innerText = data.msg;
+                    if(data.end) document.getElementById('word-target').innerText = data.winner;
                 }
             });
         }
 
         function setTarget(n) {
             scores.target = n;
-            conn.send({type: 'START', goal: n});
-            document.getElementById('scoreboard-ui').style.display = 'block';
-            document.getElementById('match-goal-tag').innerText = "BO" + n;
-            nextRound();
+            conn.send({type: 'CFG', limit: n});
+            startNextRound();
         }
 
-        function nextRound() {
+        function startNextRound() {
             if(scores.me >= scores.target || scores.opp >= scores.target) return;
-            const w = wordList[Math.floor(Math.random()*wordList.length)];
-            myLastTime = 999; oppLastTime = 999;
-            conn.send({type: 'TURN', w: w});
-            startLocalTurn(w);
+            const w = words[Math.floor(Math.random() * words.length)];
+            myTime = 999; oppTime = 999;
+            conn.send({type: 'NEW_ROUND', word: w});
+            localStart(w);
         }
 
-        function startLocalTurn(w) {
-            updateUI(true);
-            currentWord = w;
-            document.getElementById('word-display').innerText = w;
-            document.getElementById('type-input').disabled = false;
-            document.getElementById('type-input').value = "";
-            document.getElementById('type-input').focus();
-            document.getElementById('round-winner').innerText = "";
+        function localStart(w) {
+            setRoundUI(true);
+            activeWord = w;
+            document.getElementById('word-target').innerText = w;
+            document.getElementById('game-input').disabled = false;
+            document.getElementById('game-input').value = "";
+            document.getElementById('game-input').focus();
+            document.getElementById('round-winner-box').innerText = "";
             document.getElementById('master-timer').innerText = "0.000";
         }
 
-        function updateUI(isMe) {
-            document.getElementById('play-area').style.display = isMe ? 'block' : 'none';
-            document.getElementById('spectator-screen').style.display = isMe ? 'none' : 'block';
+        function setRoundUI(isMe) {
+            document.getElementById('play-view').style.display = isMe ? 'block' : 'none';
+            document.getElementById('spec-view').style.display = isMe ? 'none' : 'block';
         }
 
-        document.getElementById('type-input').oninput = (e) => {
-            const val = e.target.value.toUpperCase();
-            if(!active && val.length > 0) {
-                active = true; startTime = performance.now();
-                timerInterval = setInterval(() => {
-                    const elapsed = ((performance.now() - startTime) / 1000).toFixed(3);
-                    document.getElementById('master-timer').innerText = elapsed;
-                    if(conn) conn.send({type: 'LIVE', v: val, time: elapsed});
+        document.getElementById('game-input').oninput = (e) => {
+            const v = e.target.value.toUpperCase();
+            if(!typing && v.length > 0) {
+                typing = true; startTime = performance.now();
+                timerTask = setInterval(() => {
+                    const diff = ((performance.now() - startTime) / 1000).toFixed(3);
+                    document.getElementById('master-timer').innerText = diff;
+                    if(conn) conn.send({type: 'LIVE', val: v, t: diff});
                 }, 10);
             }
-            if(val === currentWord) {
-                clearInterval(timerInterval); active = false;
-                myLastTime = parseFloat(document.getElementById('master-timer').innerText);
-                document.getElementById('type-input').disabled = true;
-                if(isHost) checkRound();
-                else conn.send({type: 'FINISH', time: myLastTime});
+            if(v === activeWord) {
+                clearInterval(timerTask); typing = false;
+                myTime = parseFloat(document.getElementById('master-timer').innerText);
+                document.getElementById('game-input').disabled = true;
+                if(isHost) compareTimes();
+                else conn.send({type: 'DONE', t: myTime});
             }
         };
 
-        function checkRound() {
-            if(myLastTime === 999 || oppLastTime === 999) return;
-            let msg = myLastTime < oppLastTime ? "YOU WON THE ROUND" : "OPPONENT WON THE ROUND";
-            if(myLastTime < oppLastTime) scores.me++; else scores.opp++;
+        function compareTimes() {
+            if(myTime === 999 || oppTime === 999) return;
+            let resultMsg = myTime < oppTime ? "ROUND WON" : "ROUND LOST";
+            if(myTime < oppTime) scores.me++; else scores.opp++;
             
-            let over = scores.me >= scores.target || scores.opp >= scores.target;
-            let final = scores.me >= scores.target ? "MATCH MVP: YOU" : "MATCH LOST";
-            
-            conn.send({type: 'SYNC', s1: scores.opp, s2: scores.me, msg: msg, over: over, final: final});
+            const matchOver = scores.me >= scores.target || scores.opp >= scores.target;
+            const matchWinner = scores.me >= scores.target ? "MATCH MVP: YOU" : "MATCH LOST";
+
+            conn.send({type: 'SYNC', s1: scores.opp, s2: scores.me, msg: resultMsg, end: matchOver, winner: matchWinner});
             document.getElementById('my-score').innerText = scores.me;
             document.getElementById('opp-score').innerText = scores.opp;
-            document.getElementById('round-winner').innerText = msg;
-            if(over) endGame(final); else setTimeout(nextRound, 2500);
-        }
-
-        function endGame(m) {
-            document.getElementById('word-display').innerText = "GG";
-            document.getElementById('round-winner').innerText = m;
-            document.getElementById('type-input').style.display = 'none';
+            document.getElementById('round-winner-box').innerText = resultMsg;
+            if(!matchOver) setTimeout(startNextRound, 2000);
+            else document.getElementById('word-target').innerText = matchWinner;
         }
     </script>
 </body>
