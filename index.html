@@ -3,321 +3,296 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAT: Premiere</title>
+    <title>FAT: Premiere Matchmaking</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            --cs-orange: #ff9a00; --cs-bg: #121417; --cs-panel: #1b1f23;
-            --cs-border: #32383e; --cs-text: #9ba1a6; --cs-white: #ffffff;
-            --cs-ct: #5da7db; --cs-t: #de9b35; --cs-green: #4caf50;
+            --cs-orange: #ff9a00; --cs-bg: #0b0c0f; --cs-panel: #16191d;
+            --cs-border: #2d3238; --cs-text: #8b929a; --cs-white: #ffffff;
+            --cs-ct: #4b92db; --cs-t: #de9b35; --cs-green: #5eb75e;
         }
         body {
-            background-color: var(--cs-bg); color: var(--cs-text); font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--cs-bg); color: var(--cs-text); font-family: 'Segoe UI', sans-serif;
             margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; text-transform: uppercase;
-            overflow: hidden;
+            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
         }
-        /* Top Navigation */
-        .navbar {
-            width: 100%; background: #000; border-bottom: 1px solid var(--cs-border);
-            display: flex; justify-content: center; gap: 40px; padding: 15px 0; font-weight: 800; font-size: 14px;
-        }
-        .nav-item { cursor: pointer; color: var(--cs-text); transition: 0.2s; position: relative; }
-        .nav-item:hover, .nav-item.active { color: var(--cs-white); }
-        .nav-item.active::after { content: ''; position: absolute; bottom: -15px; left: 0; width: 100%; height: 2px; background: var(--cs-orange); }
 
-        .app-container { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; overflow-y: auto; }
-        
-        /* Tabs */
-        .tab-content { display: none; width: 100%; max-width: 500px; flex-direction: column; align-items: center; }
-        .tab-content.active { display: flex; }
+        /* Top Bar */
+        .navbar {
+            background: #000; border-bottom: 1px solid var(--cs-border);
+            display: flex; align-items: center; padding: 0 40px; height: 60px; justify-content: space-between;
+        }
+        .nav-group { display: flex; gap: 30px; height: 100%; }
+        .nav-item { 
+            display: flex; align-items: center; cursor: pointer; color: var(--cs-text); 
+            font-weight: 800; font-size: 13px; border-bottom: 3px solid transparent; transition: 0.2s;
+        }
+        .nav-item:hover, .nav-item.active { color: var(--cs-white); border-bottom: 3px solid var(--cs-orange); }
+
+        .app-container { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+        .tab-view { display: none; width: 100%; max-width: 550px; flex-direction: column; }
+        .tab-view.active { display: flex; }
 
         /* Panels */
-        .panel { background: var(--cs-panel); border: 1px solid var(--cs-border); padding: 30px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 2px; }
-        .panel-header { font-size: 18px; color: var(--cs-white); margin-bottom: 20px; border-left: 4px solid var(--cs-orange); padding-left: 10px; font-weight: 900; }
+        .panel { background: var(--cs-panel); border: 1px solid var(--cs-border); padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+        .panel-header { font-size: 18px; color: var(--cs-white); margin-bottom: 20px; font-weight: 900; letter-spacing: 1px; }
 
-        /* Inputs & Buttons */
-        .input-box { width: 100%; background: #000; border: 1px solid var(--cs-border); padding: 15px; color: white; margin-bottom: 20px; outline: none; box-sizing: border-box; font-size: 16px; font-family: monospace; }
-        .input-box:focus { border-color: var(--cs-orange); }
-        .btn-prime { background: var(--cs-orange); color: black; border: none; width: 100%; padding: 15px; font-weight: 900; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        /* Inputs */
+        .cs-input { 
+            width: 100%; background: #000; border: 1px solid var(--cs-border); padding: 15px; 
+            color: #fff; margin-bottom: 15px; font-family: monospace; box-sizing: border-box; outline: none;
+        }
+        .cs-input:focus { border-color: var(--cs-orange); }
+
+        .btn-prime { 
+            background: var(--cs-orange); color: #000; border: none; width: 100%; 
+            padding: 15px; font-weight: 900; cursor: pointer; transition: 0.1s;
+        }
         .btn-prime:hover { filter: brightness(1.2); }
-        .btn-prime:disabled { background: #333; color: #666; cursor: not-allowed; }
+        .btn-prime:active { transform: scale(0.98); }
 
         /* Shop Grid */
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
-        .shop-card { background: #131518; border: 1px solid var(--cs-border); padding: 15px; text-align: center; transition: 0.2s; }
-        .shop-card:hover { border-color: var(--cs-orange); }
-        .price-tag { color: var(--cs-green); font-family: monospace; margin: 10px 0; font-weight: bold; }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .item-card { 
+            background: #111418; border: 1px solid var(--cs-border); padding: 15px; 
+            text-align: center; display: flex; flex-direction: column;
+        }
+        .item-price { color: var(--cs-green); font-family: monospace; margin: 10px 0; font-weight: bold; }
 
-        /* Scoreboard Overlay */
-        .scoreboard { display: none; width: 400px; background: rgba(0,0,0,0.8); border: 1px solid var(--cs-border); padding: 10px 20px; margin-bottom: 20px; }
-        .score-flex { display: flex; justify-content: space-between; align-items: center; }
-        .score-num { font-size: 32px; font-weight: 900; color: white; }
+        /* Game UI */
+        #scoreboard { 
+            display: none; width: 100%; background: rgba(0,0,0,0.9); 
+            border: 1px solid var(--cs-border); padding: 15px; margin-bottom: 20px;
+        }
+        .score-row { display: flex; justify-content: space-between; align-items: center; font-size: 32px; font-weight: 900; }
+        .timer { color: var(--cs-orange); font-family: monospace; font-size: 24px; }
 
-        /* Dev Console */
-        .console { width: 100%; background: #0a0b0c; border-top: 1px solid var(--cs-border); padding: 10px 20px; font-family: monospace; font-size: 11px; color: #00ff00; height: 100px; overflow-y: auto; text-transform: none; }
+        .console {
+            background: #000; border-top: 1px solid var(--cs-border); color: #00ff00;
+            font-family: monospace; font-size: 11px; height: 80px; padding: 10px; overflow-y: auto;
+        }
     </style>
 </head>
 <body>
 
     <div class="navbar">
-        <div class="nav-item active" id="nav-play" onclick="showTab('play')">PLAY</div>
-        <div class="nav-item" id="nav-shop" onclick="showTab('shop')">SHOP</div>
-        <div style="margin-left: auto; margin-right: 40px; color: var(--cs-green); font-weight: bold;">$ <span id="balance">0</span></div>
+        <div class="nav-group">
+            <div class="nav-item active" onclick="showTab('play', this)">PLAY</div>
+            <div class="nav-item" onclick="showTab('shop', this)">SHOP</div>
+        </div>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <div id="status-light" style="width:10px; height:10px; background:red; border-radius:50%;"></div>
+            <div style="color:var(--cs-green); font-weight:900;">$ <span id="wallet">0</span></div>
+        </div>
     </div>
 
     <div class="app-container">
         
-        <div id="scoreboard-ui" class="scoreboard">
-            <div class="score-flex">
-                <div style="color: var(--cs-ct)">CT <span id="my-score" class="score-num">0</span></div>
-                <div id="master-timer" style="font-size: 24px; color: var(--cs-orange); font-family: monospace;">0.000</div>
-                <div style="color: var(--cs-t)"><span id="opp-score" class="score-num">0</span> T</div>
+        <div id="scoreboard" class="panel">
+            <div class="score-row">
+                <div style="color:var(--cs-ct)" id="ui-name-me">CT: <span id="s-me">0</span></div>
+                <div class="timer" id="timer">0.000</div>
+                <div style="color:var(--cs-t)" id="ui-name-opp"><span id="s-opp">0</span> :T</div>
             </div>
         </div>
 
-        <div id="tab-play" class="tab-content active">
-            <div id="lobby-panel" class="panel">
-                <div class="panel-header">LOBBY SELECTION</div>
-                <input type="text" id="room-input" class="input-box" placeholder="ENTER ROOM NAME (e.g. JUDE123)">
+        <div id="tab-play" class="tab-view active">
+            <div class="panel" id="lobby">
+                <div class="panel-header">PRE-MATCH LOBBY</div>
+                <input type="text" id="room-id" class="cs-input" placeholder="LOBBY CODE (E.G. JUDE99)">
                 <div style="display:flex; gap:10px;">
-                    <button id="host-btn" class="btn-prime" style="background:#32383e; color:white;">HOST</button>
-                    <button id="join-btn" class="btn-prime">JOIN</button>
+                    <button class="btn-prime" onclick="initNet(true)" style="background:#2d3238; color:white;">HOST</button>
+                    <button class="btn-prime" onclick="initNet(false)">JOIN</button>
                 </div>
-                <div id="host-settings" style="display:none; margin-top:20px; border-top:1px solid #333; padding-top:20px;">
-                    <p style="font-size:10px;">CHOOSE ROUND LIMIT</p>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn-prime" onclick="startMatch(3)">BO3</button>
-                        <button class="btn-prime" onclick="startMatch(5)">BO5</button>
-                    </div>
+                <div id="host-controls" style="display:none; margin-top:20px; border-top:1px solid #333; padding-top:20px;">
+                    <button class="btn-prime" onclick="startMatch()">START MATCH (BO3)</button>
                 </div>
             </div>
 
-            <div id="game-area" style="display:none; text-align:center; width:100%;">
-                <div id="word-display" style="font-size: 60px; font-weight: 900; color: white; margin-bottom: 20px;">READY?</div>
-                <input type="text" id="type-input" class="input-box" placeholder="TYPE TARGET..." style="text-align:center; font-size:24px;">
-                <div id="enemy-view" style="display:none; padding:20px; border:1px dashed var(--cs-orange); background:rgba(255,154,0,0.05);">
-                    <div style="font-size:10px; color:var(--cs-orange);">WATCHING ENEMY...</div>
-                    <div id="enemy-text" style="font-size:32px; color:white; min-height:40px;"></div>
+            <div id="game-view" style="display:none; text-align:center; width:100%;">
+                <h1 id="target-word" style="font-size:70px; color:white; margin:20px 0;">READY?</h1>
+                <input type="text" id="type-input" class="cs-input" style="text-align:center; font-size:30px;" placeholder="..." autocomplete="off">
+                <div id="spec-view" style="display:none; border: 1px dashed var(--cs-orange); padding:20px;">
+                    <div style="font-size:10px; color:var(--cs-orange);">OPPONENT TYPING...</div>
+                    <div id="opp-text" style="font-size:32px; color:white; min-height:40px;"></div>
                 </div>
-                <div id="round-msg" style="margin-top:20px; color:var(--cs-orange); font-weight:bold;"></div>
+                <div id="round-result" style="margin-top:20px; color:var(--cs-orange); font-weight:bold; font-size:20px;"></div>
             </div>
         </div>
 
-        <div id="tab-shop" class="tab-content">
+        <div id="tab-shop" class="tab-view">
             <div class="panel">
-                <div class="panel-header">MARKETPLACE</div>
+                <div class="panel-header">EQUIPMENT SHOP</div>
                 <div class="shop-grid">
-                    <div class="shop-card">
-                        <div style="font-weight:bold; color:white;">GOLD NAME</div>
-                        <div class="price-tag">$500</div>
-                        <button class="btn-prime" onclick="buyItem('gold', 500)" style="font-size:12px; padding:8px;">PURCHASE</button>
+                    <div class="item-card">
+                        <span>[PREMIUM] TAG</span>
+                        <span class="item-price">$500</span>
+                        <button class="btn-prime" onclick="buy('tag', '[PREMIUM]', 500)" style="font-size:10px;">BUY</button>
                     </div>
-                    <div class="shop-card">
-                        <div style="font-weight:bold; color:white;">RED NAME</div>
-                        <div class="price-tag">$300</div>
-                        <button class="btn-prime" onclick="buyItem('red', 300)" style="font-size:12px; padding:8px;">PURCHASE</button>
-                    </div>
-                    <div class="shop-card">
-                        <div style="font-weight:bold; color:white;">[MVP] TAG</div>
-                        <div class="price-tag">$1000</div>
-                        <button class="btn-prime" onclick="buyItem('mvp', 1000)" style="font-size:12px; padding:8px;">PURCHASE</button>
+                    <div class="item-card">
+                        <span style="color: gold;">GOLD NAME</span>
+                        <span class="item-price">$1000</span>
+                        <button class="btn-prime" onclick="buy('color', 'gold', 1000)" style="font-size:10px;">BUY</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="console" id="console-log">
-        [SYSTEM] INITIALIZING CORE...
-    </div>
+    <div class="console" id="logs">Connecting to master server...</div>
 
     <script>
-        // --- LOGIC ---
-        let peer, conn, isHost = false, scores = { me: 0, opp: 0, target: 3 };
-        let activeWord = "", startTime, timerInt, typing = false, myT = 999, oppT = 999;
-        let balance = parseInt(localStorage.getItem('fat_balance')) || 0;
+        let peer, conn, isHost = false, myScore = 0, oppScore = 0;
+        let curWord = "", startTime, tInt, myT = 999, oppT = 999;
+        let bal = parseInt(localStorage.getItem('cs_bal')) || 0;
+        let myItems = JSON.parse(localStorage.getItem('cs_items')) || { tag: '', color: '#fff' };
 
-        function log(msg) {
-            const c = document.getElementById('console-log');
-            c.innerHTML += `<div>> ${msg}</div>`;
-            c.scrollTop = c.scrollHeight;
+        function log(m) { const l = document.getElementById('logs'); l.innerHTML += `<div>> ${m}</div>`; l.scrollTop = l.scrollHeight; }
+        function updateBal(n) { bal += n; localStorage.setItem('cs_bal', bal); document.getElementById('wallet').innerText = bal; }
+        updateBal(0);
+
+        function showTab(id, el) {
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(v => v.classList.remove('active'));
+            document.getElementById('tab-'+id).classList.add('active');
+            el.classList.add('active');
         }
 
-        function updateBalance(amt) {
-            balance += amt;
-            localStorage.setItem('fat_balance', balance);
-            document.getElementById('balance').innerText = balance;
-        }
-        updateBalance(0);
-
-        function showTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            document.getElementById('nav-' + tab).classList.add('active');
-        }
-
-        // --- NETWORK FIX ---
-        function initNetwork(id, hosting) {
+        // --- THE NETWORK FIX ---
+        function initNet(host) {
+            const rawId = document.getElementById('room-id').value.trim().toLowerCase();
+            if(!rawId) return alert("Enter a code!");
+            
+            log("Attempting handshake...");
             if(peer) peer.destroy();
-            // We use a specific prefix to avoid room collisions
-            const networkId = "fat_v2_" + id.toLowerCase().replace(/\s/g, '');
-            peer = new Peer(hosting ? networkId : undefined);
+            
+            // Random salt prevents "ID Taken" errors
+            const finalId = "cs_fat_" + rawId;
+            peer = new Peer(host ? finalId : undefined, {
+                debug: 1,
+                config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]}
+            });
 
             peer.on('open', (id) => {
-                log(hosting ? "LOBBY CREATED: " + id : "NETWORK READY");
-                if(!hosting) {
-                    log("CONNECTING TO " + networkId + "...");
-                    conn = peer.connect(networkId);
-                    setupConn(conn);
+                document.getElementById('status-light').style.background = 'green';
+                log(host ? "Lobby live: " + rawId : "Network ready.");
+                if(!host) {
+                    conn = peer.connect(finalId);
+                    setup(conn);
                 }
             });
 
             peer.on('connection', (c) => {
                 conn = c; isHost = true;
-                log("PLAYER CONNECTED!");
-                document.getElementById('host-settings').style.display = 'block';
-                setupConn(conn);
+                log("Opponent joined!");
+                document.getElementById('host-controls').style.display = 'block';
+                setup(conn);
             });
 
-            peer.on('error', (err) => {
-                log("NETWORK ERROR: " + err.type.toUpperCase());
-                if(err.type === 'unavailable-id') alert("ROOM NAME IS CURRENTLY ACTIVE. TRY A NEW NAME.");
+            peer.on('error', (e) => {
+                log("Error: " + e.type);
+                document.getElementById('status-light').style.background = 'red';
+                if(e.type === 'peer-unavailable') alert("Room not found. Check the spelling!");
+                if(e.type === 'unavailable-id') alert("Room taken. Try adding a number to the end!");
             });
         }
 
-        document.getElementById('host-btn').onclick = () => {
-            const val = document.getElementById('room-input').value;
-            if(!val) return alert("ENTER NAME");
-            initNetwork(val, true);
-        };
-
-        document.getElementById('join-btn').onclick = () => {
-            const val = document.getElementById('room-input').value;
-            if(!val) return alert("ENTER NAME");
-            initNetwork(val, false);
-        };
-
-        function setupConn(c) {
+        function setup(c) {
             c.on('open', () => {
-                document.getElementById('lobby-panel').style.display = 'none';
-                document.getElementById('game-area').style.display = 'block';
-                document.getElementById('scoreboard-ui').style.display = 'block';
+                document.getElementById('lobby').style.display = 'none';
+                document.getElementById('game-view').style.display = 'block';
+                document.getElementById('scoreboard').style.display = 'block';
+                c.send({type: 'PROF', items: myItems});
             });
             c.on('data', (d) => {
-                if(d.type === 'START') scores.target = d.goal;
-                if(d.type === 'ROUND') {
-                    activeWord = d.w;
-                    document.getElementById('word-display').innerText = d.w;
-                    document.getElementById('type-input').value = "";
-                    document.getElementById('type-input').disabled = false;
-                    document.getElementById('type-input').focus();
-                    document.getElementById('round-msg').innerText = "";
-                    setUI(true);
+                if(d.type === 'PROF') {
+                    document.getElementById('ui-name-opp').style.color = d.items.color;
+                    document.getElementById('ui-name-opp').innerText = `${oppScore} :${d.items.tag} T`;
+                }
+                if(d.type === 'START') newRound();
+                if(d.type === 'WORD') {
+                    curWord = d.w; document.getElementById('target-word').innerText = d.w;
+                    document.getElementById('type-input').value = ""; document.getElementById('type-input').disabled = false;
+                    document.getElementById('type-input').focus(); document.getElementById('round-result').innerText = "";
+                    document.getElementById('type-input').style.display = 'block';
+                    document.getElementById('spec-view').style.display = 'none';
                 }
                 if(d.type === 'LIVE') {
-                    setUI(false);
-                    document.getElementById('enemy-text').innerText = d.v;
-                    if(d.t) document.getElementById('master-timer').innerText = d.t;
+                    document.getElementById('type-input').style.display = 'none';
+                    document.getElementById('spec-view').style.display = 'block';
+                    document.getElementById('opp-text').innerText = d.v;
+                    if(d.t) document.getElementById('timer').innerText = d.t;
                 }
-                if(d.type === 'FINISH') {
-                    oppT = parseFloat(d.t);
-                    if(isHost) checkWinner();
-                }
+                if(d.type === 'DONE') { oppT = parseFloat(d.t); if(isHost) check(); }
                 if(d.type === 'SYNC') {
-                    scores.me = d.s1; scores.opp = d.s2;
-                    document.getElementById('my-score').innerText = scores.me;
-                    document.getElementById('opp-score').innerText = scores.opp;
-                    document.getElementById('round-msg').innerText = d.msg;
-                    if(d.win) updateBalance(50);
-                    if(d.over) {
-                        document.getElementById('word-display').innerText = d.final;
-                        document.getElementById('type-input').style.display = 'none';
-                        if(d.final.includes("MVP")) updateBalance(200);
-                    }
+                    myScore = d.s1; oppScore = d.s2;
+                    document.getElementById('s-me').innerText = myScore;
+                    document.getElementById('s-opp').innerText = oppScore;
+                    document.getElementById('round-result').innerText = d.msg;
+                    if(d.over) document.getElementById('target-word').innerText = d.fin;
                 }
             });
         }
 
-        // --- GAMEPLAY ---
-        function startMatch(n) {
-            scores.target = n;
-            conn.send({type: 'START', goal: n});
-            nextRound();
-        }
-
-        function nextRound() {
-            if(scores.me >= scores.target || scores.opp >= scores.target) return;
-            const words = ["BOMB", "FLASH", "ENTRY", "RUSH", "ACE", "CLUTCH", "PLANT"];
+        function startMatch() { newRound(); }
+        
+        function newRound() {
+            const words = ["BOMB", "FLASH", "ENTRY", "RUSH", "ACE", "CLUTCH", "PLANT", "DEFUSE", "SMOKE"];
             const w = words[Math.floor(Math.random()*words.length)];
             myT = 999; oppT = 999;
-            conn.send({type: 'ROUND', w: w});
+            conn.send({type: 'WORD', w: w});
             localRound(w);
         }
 
         function localRound(w) {
-            activeWord = w;
-            document.getElementById('word-display').innerText = w;
-            document.getElementById('type-input').value = "";
-            document.getElementById('type-input').disabled = false;
-            document.getElementById('type-input').focus();
-            document.getElementById('round-msg').innerText = "";
-            document.getElementById('master-timer').innerText = "0.000";
-            setUI(true);
-        }
-
-        function setUI(me) {
-            document.getElementById('play-view')?.remove(); // Cleanup
-            document.getElementById('type-input').style.display = me ? 'block' : 'none';
-            document.getElementById('enemy-view').style.display = me ? 'none' : 'block';
+            curWord = w; document.getElementById('target-word').innerText = w;
+            document.getElementById('type-input').value = ""; document.getElementById('type-input').disabled = false;
+            document.getElementById('type-input').focus(); document.getElementById('timer').innerText = "0.000";
+            document.getElementById('type-input').style.display = 'block';
+            document.getElementById('spec-view').style.display = 'none';
         }
 
         document.getElementById('type-input').oninput = (e) => {
             const v = e.target.value.toUpperCase();
-            if(!typing && v.length > 0) {
-                typing = true; startTime = performance.now();
-                timerInt = setInterval(() => {
+            if(v.length === 1) {
+                startTime = performance.now();
+                tInt = setInterval(() => {
                     const diff = ((performance.now() - startTime) / 1000).toFixed(3);
-                    document.getElementById('master-timer').innerText = diff;
-                    if(conn) conn.send({type: 'LIVE', v: v, t: diff});
+                    document.getElementById('timer').innerText = diff;
+                    conn.send({type: 'LIVE', v: v, t: diff});
                 }, 10);
             }
-            if(v === activeWord) {
-                clearInterval(timerInt); typing = false;
-                myT = parseFloat(document.getElementById('master-timer').innerText);
+            conn.send({type: 'LIVE', v: v});
+            if(v === curWord) {
+                clearInterval(tInt); myT = parseFloat(document.getElementById('timer').innerText);
                 document.getElementById('type-input').disabled = true;
-                if(isHost) checkWinner();
-                else conn.send({type: 'FINISH', t: myT});
+                if(isHost) check(); else conn.send({type: 'DONE', t: myT});
             }
         };
 
-        function checkWinner() {
+        function check() {
             if(myT === 999 || oppT === 999) return;
             let win = myT < oppT;
-            let msg = win ? "ROUND WON (+$50)" : "ROUND LOST";
-            if(win) scores.me++; else scores.opp++;
-            let over = scores.me >= scores.target || scores.opp >= scores.target;
-            let final = scores.me >= scores.target ? "MATCH MVP (+$200)" : "MATCH LOST";
+            if(win) myScore++; else oppScore++;
+            let over = myScore >= 3 || oppScore >= 3;
+            let fin = myScore >= 3 ? "MATCH MVP (+$250)" : "MATCH LOST";
+            if(win) updateBal(50); if(myScore >= 3) updateBal(250);
             
-            conn.send({type: 'SYNC', s1: scores.opp, s2: scores.me, msg: win ? "ROUND LOST" : "ROUND WON (+$50)", over: over, final: final, win: !win});
-            document.getElementById('my-score').innerText = scores.me;
-            document.getElementById('opp-score').innerText = scores.opp;
-            document.getElementById('round-msg').innerText = msg;
-            if(win) updateBalance(50);
-            if(over) {
-                document.getElementById('word-display').innerText = final;
-                if(scores.me >= scores.target) updateBalance(200);
-            } else setTimeout(nextRound, 2500);
+            conn.send({type: 'SYNC', s1: oppScore, s2: myScore, msg: win ? "LOST" : "WON (+$50)", over: over, fin: fin});
+            document.getElementById('s-me').innerText = myScore;
+            document.getElementById('s-opp').innerText = oppScore;
+            document.getElementById('round-result').innerText = win ? "WON (+$50)" : "LOST";
+            if(over) document.getElementById('target-word').innerText = fin;
+            else setTimeout(newRound, 2000);
         }
 
-        function buyItem(name, price) {
-            if(balance >= price) {
-                updateBalance(-price);
-                alert("PURCHASED: " + name.toUpperCase());
-                log("BOUGHT " + name);
-            } else {
-                alert("INSUFFICIENT FUNDS");
-            }
+        function buy(type, val, cost) {
+            if(bal >= cost) {
+                updateBal(-cost);
+                myItems[type] = val;
+                localStorage.setItem('cs_items', JSON.stringify(myItems));
+                alert("Equipped!");
+            } else alert("Need more cash!");
         }
     </script>
 </body>
