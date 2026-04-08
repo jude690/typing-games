@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAT: Premiere (Stable)</title>
+    <title>FAT: Global Offensive | Multiplayer Typing</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -11,280 +11,292 @@
             --cs-border: #32383e; --cs-text: #9ba1a6; --cs-white: #ffffff;
             --cs-ct: #5da7db; --cs-t: #de9b35; --cs-green: #4caf50; --cs-red: #ff4444;
         }
-        body { background-color: var(--cs-bg); color: var(--cs-text); font-family: 'Segoe UI', sans-serif; margin: 0; text-transform: uppercase; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
-        
-        /* Navbar */
-        .navbar { display: flex; justify-content: space-between; align-items: center; background: #000; padding: 0 30px; height: 60px; border-bottom: 1px solid var(--cs-border); }
-        .nav-links { display: flex; gap: 20px; }
-        .nav-item { cursor: pointer; font-weight: 800; font-size: 13px; color: var(--cs-text); border-bottom: 3px solid transparent; padding: 18px 0; }
-        .nav-item.active { color: white; border-bottom: 3px solid var(--cs-orange); }
+        body {
+            background-color: var(--cs-bg); color: var(--cs-text); font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; text-transform: uppercase;
+            overflow: hidden;
+        }
 
-        /* Status Bar */
-        .status-bar { background: #1a1c21; padding: 5px 30px; font-size: 10px; display: flex; gap: 15px; border-bottom: 1px solid var(--cs-border); }
-        .stat { display: flex; align-items: center; gap: 5px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: grey; }
-        .dot.online { background: var(--cs-green); box-shadow: 0 0 5px var(--cs-green); }
-        .dot.offline { background: var(--cs-red); }
+        /* Navigation Bar */
+        .navbar {
+            display: flex; justify-content: space-between; align-items: center; background: #000;
+            padding: 0 40px; height: 60px; border-bottom: 1px solid var(--cs-border);
+        }
+        .nav-links { display: flex; gap: 30px; height: 100%; }
+        .nav-item { 
+            display: flex; align-items: center; cursor: pointer; color: var(--cs-text);
+            font-weight: 800; font-size: 13px; border-bottom: 3px solid transparent; transition: 0.2s;
+        }
+        .nav-item:hover, .nav-item.active { color: var(--cs-white); border-bottom: 3px solid var(--cs-orange); }
+        .wallet { color: var(--cs-green); font-weight: 900; font-size: 16px; }
+
+        /* Status Light Bar */
+        .status-strip { background: #15171c; padding: 5px 40px; font-size: 10px; display: flex; gap: 20px; border-bottom: 1px solid var(--cs-border); }
+        .stat { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #444; }
+        .dot.active { background: var(--cs-green); box-shadow: 0 0 5px var(--cs-green); }
 
         /* Layout */
-        .main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; position: relative; }
-        .tab { display: none; width: 100%; max-width: 450px; }
-        .tab.active { display: flex; flex-direction: column; }
+        .app { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; overflow-y: auto; }
+        .tab { display: none; width: 100%; max-width: 500px; flex-direction: column; }
+        .tab.active { display: flex; }
 
-        /* GUI Elements */
-        .panel { background: var(--cs-panel); border: 1px solid var(--cs-border); padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-        .panel-h { color: white; font-weight: 900; margin-bottom: 15px; font-size: 14px; border-left: 3px solid var(--cs-orange); padding-left: 10px; }
-        .cs-input { width: 100%; background: #000; border: 1px solid var(--cs-border); padding: 12px; color: white; margin-bottom: 10px; box-sizing: border-box; outline: none; font-family: monospace; }
-        .btn { width: 100%; padding: 12px; font-weight: 900; border: none; cursor: pointer; transition: 0.2s; margin-top: 5px; }
-        .btn-orange { background: var(--cs-orange); color: black; }
-        .btn-grey { background: #2d3238; color: white; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Panels */
+        .panel { background: var(--cs-panel); border: 1px solid var(--cs-border); padding: 30px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .panel-h { font-size: 16px; color: var(--cs-white); margin-bottom: 20px; border-left: 4px solid var(--cs-orange); padding-left: 10px; font-weight: 900; }
 
-        /* Shop Grid */
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .item { background: #121417; border: 1px solid var(--cs-border); padding: 15px; text-align: center; }
-        .price { color: var(--cs-green); display: block; margin: 10px 0; font-weight: bold; }
+        /* Inputs & Buttons */
+        .input { width: 100%; background: #000; border: 1px solid var(--cs-border); padding: 15px; color: #fff; margin-bottom: 15px; box-sizing: border-box; outline: none; font-family: monospace; }
+        .input:focus { border-color: var(--cs-orange); }
+        .btn { width: 100%; padding: 15px; font-weight: 900; cursor: pointer; border: none; transition: 0.1s; }
+        .btn-prime { background: var(--cs-orange); color: #000; }
+        .btn-sec { background: #2d3238; color: #fff; }
+        .btn:hover { filter: brightness(1.1); }
 
         /* Scoreboard Overlay */
-        .score-wrap { display: none; width: 100%; max-width: 400px; background: rgba(0,0,0,0.8); border: 1px solid var(--cs-border); padding: 10px 20px; margin-bottom: 20px; }
+        .scoreboard { display: none; width: 100%; max-width: 450px; background: rgba(0,0,0,0.8); border: 1px solid var(--cs-border); padding: 10px 20px; margin-bottom: 20px; box-sizing: border-box; }
         .score-flex { display: flex; justify-content: space-between; align-items: center; }
-        .score-val { font-size: 28px; font-weight: 900; color: white; }
+        .score-num { font-size: 30px; font-weight: 900; color: #fff; }
+        .timer { color: var(--cs-orange); font-family: monospace; font-size: 22px; }
 
-        /* Console */
-        .console { position: absolute; bottom: 0; width: 100%; height: 100px; background: #000; color: #00ff00; font-family: monospace; font-size: 11px; padding: 10px; border-top: 1px solid var(--cs-border); overflow-y: auto; text-transform: none; }
+        /* Shop Grid */
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .shop-card { background: #121417; border: 1px solid var(--cs-border); padding: 15px; text-align: center; }
+        .price { color: var(--cs-green); font-weight: bold; margin: 10px 0; display: block; }
+
+        /* Debug Log */
+        .console { position: fixed; bottom: 0; width: 100%; height: 80px; background: #000; color: #00ff00; font-family: monospace; font-size: 10px; padding: 10px; border-top: 1px solid var(--cs-border); overflow-y: auto; text-transform: none; z-index: 100; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
         <div class="nav-links">
-            <div class="nav-item active" onclick="showTab('play')">PLAY</div>
-            <div class="nav-item" onclick="showTab('shop')">SHOP</div>
+            <div class="nav-item active" onclick="tab('play', this)">PLAY</div>
+            <div class="nav-item" onclick="tab('shop', this)">SHOP</div>
         </div>
-        <div style="color:var(--cs-green); font-weight:bold;">$ <span id="money">0</span></div>
+        <div class="wallet">$ <span id="balance">0</span></div>
     </div>
 
-    <div class="status-bar">
-        <div class="stat">SERVER: <div id="dot-server" class="dot"></div> <span id="text-server">CHECKING...</span></div>
-        <div class="stat">ROOM: <div id="dot-room" class="dot"></div> <span id="text-room">IDLE</span></div>
+    <div class="status-strip">
+        <div class="stat">NETWORK: <div id="net-dot" class="dot"></div></div>
+        <div class="stat">ROOM: <span id="room-status">IDLE</span></div>
     </div>
 
-    <div class="main">
-        
-        <div id="scoreboard" class="score-wrap">
+    <div class="app">
+        <div id="scoreboard" class="scoreboard">
             <div class="score-flex">
-                <div style="color:var(--cs-ct)">CT <span id="sc-me" class="score-val">0</span></div>
-                <div id="timer" style="color:var(--cs-orange); font-family:monospace; font-size:20px;">0.000</div>
-                <div style="color:var(--cs-t)"><span id="sc-opp" class="score-val">0</span> T</div>
+                <div style="color: var(--cs-ct)">CT <span id="s-me" class="score-num">0</span></div>
+                <div id="main-timer" class="timer">0.000</div>
+                <div style="color: var(--cs-t)"><span id="s-opp" class="score-num">0</span> T</div>
             </div>
         </div>
 
         <div id="tab-play" class="tab active">
-            <div class="panel" id="lobby-ui">
-                <div class="panel-h">MATCHMAKING</div>
-                <input type="text" id="room-id" class="cs-input" placeholder="LOBBY NAME (e.g. JUDE123)">
+            <div class="panel" id="lobby">
+                <div class="panel-h">LOBBY TERMINAL</div>
+                <input type="text" id="room-input" class="input" placeholder="LOBBY ID (E.G. JUDE123)">
                 <div style="display:flex; gap:10px;">
-                    <button class="btn btn-grey" id="host-btn" onclick="init(true)">HOST</button>
-                    <button class="btn btn-orange" id="join-btn" onclick="init(false)">JOIN</button>
+                    <button class="btn btn-sec" onclick="initNet(true)">HOST</button>
+                    <button class="btn btn-prime" onclick="initNet(false)">JOIN</button>
                 </div>
-                <div id="host-tools" style="display:none; margin-top:15px; border-top:1px solid #333; padding-top:15px;">
-                    <button class="btn btn-orange" onclick="startMatch()">START BO3</button>
+                <div id="host-tools" style="display:none; margin-top:20px; border-top:1px solid #333; padding-top:20px;">
+                    <button class="btn btn-prime" onclick="startGame()">START MATCH (BO3)</button>
                 </div>
             </div>
 
-            <div id="game-ui" style="display:none; text-align:center;">
-                <div id="word" style="font-size:60px; font-weight:900; color:white; margin-bottom:20px;">READY?</div>
-                <input type="text" id="type-box" class="cs-input" style="text-align:center; font-size:24px;" placeholder="TYPE..." autocomplete="off">
-                <div id="opp-view" style="display:none; border:1px dashed var(--cs-orange); padding:20px;">
-                    <div style="font-size:10px; color:var(--cs-orange); margin-bottom:5px;">OPPONENT IS TYPING...</div>
-                    <div id="opp-text" style="font-size:32px; color:white; min-height:40px;"></div>
+            <div id="game" style="display:none; width:100%; text-align:center;">
+                <div id="word-target" style="font-size: 65px; font-weight: 900; color: #fff; margin: 20px 0;">READY?</div>
+                <input type="text" id="type-box" class="input" style="text-align:center; font-size: 28px;" placeholder="..." autocomplete="off">
+                <div id="enemy-spectate" style="display:none; padding: 20px; border: 1px dashed var(--cs-orange); background: rgba(255,154,0,0.05);">
+                    <div style="font-size:10px; color:var(--cs-orange);">ENEMEY SIGHTED...</div>
+                    <div id="enemy-text" style="font-size:32px; color:#fff; min-height:40px;"></div>
                 </div>
-                <div id="msg" style="margin-top:15px; color:var(--cs-orange); font-weight:bold;"></div>
+                <div id="round-msg" style="margin-top:20px; color:var(--cs-orange); font-weight:bold;"></div>
             </div>
         </div>
 
         <div id="tab-shop" class="tab">
             <div class="panel">
-                <div class="panel-h">ITEM SHOP</div>
+                <div class="panel-h">MARKETPLACE</div>
                 <div class="shop-grid">
-                    <div class="item">
-                        <span>RED NAME</span>
-                        <span class="price">$250</span>
-                        <button class="btn btn-orange" style="font-size:10px; padding:5px;" onclick="buy('red', 250)">BUY</button>
+                    <div class="shop-card">
+                        <div style="font-weight:bold; color:white;">RED NAME</div>
+                        <span class="price">$500</span>
+                        <button class="btn btn-prime" style="padding:5px; font-size:10px;" onclick="buyItem('red', 500)">PURCHASE</button>
                     </div>
-                    <div class="item">
-                        <span style="color:gold;">GOLD NAME</span>
-                        <span class="price">$1000</span>
-                        <button class="btn btn-orange" style="font-size:10px; padding:5px;" onclick="buy('gold', 1000)">BUY</button>
+                    <div class="shop-card">
+                        <div style="font-weight:bold; color:gold;">GOLD NAME</div>
+                        <span class="price">$1500</span>
+                        <button class="btn btn-prime" style="padding:5px; font-size:10px;" onclick="buyItem('gold', 1500)">PURCHASE</button>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
-    <div class="console" id="log">SYSTEM INITIALIZING...</div>
+    <div class="console" id="log">
+        [SYS] AWAITING INPUT...
+    </div>
 
     <script>
-        let peer, conn, isHost = false, myS = 0, oppS = 0;
-        let curWord = "", startT, tInt, myT = 999, oppT = 999;
-        let bal = parseInt(localStorage.getItem('f_bal')) || 0;
+        // --- GAME STATE ---
+        let peer, conn, isHost = false, scores = { me: 0, opp: 0 };
+        let currentWord = "", startTime, timerInterval, typing = false, myTime = 999, oppTime = 999;
+        let bal = parseInt(localStorage.getItem('cs_fat_bal')) || 0;
 
-        function log(m) { const l = document.getElementById('log'); l.innerHTML += `<div>> ${m}</div>`; l.scrollTop = l.scrollHeight; }
-        function showTab(t) {
-            document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
-            document.getElementById('tab-'+t).classList.add('active');
-            event.target.classList.add('active');
+        function log(m) { const c = document.getElementById('log'); c.innerHTML += `<div>> ${m}</div>`; c.scrollTop = c.scrollHeight; }
+        function tab(name, el) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('tab-'+name).classList.add('active');
+            el.classList.add('active');
         }
 
-        function updateBal(n) { bal += n; localStorage.setItem('f_bal', bal); document.getElementById('money').innerText = bal; }
+        function updateBal(n) { bal += n; localStorage.setItem('cs_fat_bal', bal); document.getElementById('balance').innerText = bal; }
         updateBal(0);
 
-        // --- NETWORK FIX & DEBUG ---
-        function setStatus(type, status, text) {
-            const dot = document.getElementById('dot-'+type);
-            const txt = document.getElementById('text-'+text ? type : type);
-            if (status === 'on') { dot.className = 'dot online'; document.getElementById('text-'+type).innerText = text || 'ONLINE'; }
-            if (status === 'off') { dot.className = 'dot offline'; document.getElementById('text-'+type).innerText = text || 'ERROR'; }
-        }
+        // --- NETWORK CORE (FIXED) ---
+        function initNet(hosting) {
+            const rawId = document.getElementById('room-input').value.trim().toLowerCase();
+            if(!rawId) return alert("ENTER A ROOM ID");
 
-        function init(hostMode) {
-            const id = document.getElementById('room-id').value.trim().toLowerCase();
-            if(!id) return alert("ENTER LOBBY NAME");
-            
-            log("DIAGNOSING CONNECTION...");
             if(peer) peer.destroy();
-
-            // We use standard Google STUN servers to bypass router blocks
-            peer = new Peer("fat_v4_" + id, {
-                config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }]},
+            
+            // Using more reliable STUN servers and a specific App Prefix
+            const finalId = "fat_global_" + rawId;
+            peer = new Peer(hosting ? finalId : undefined, {
+                config: {'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }, { 'urls': 'stun:stun1.l.google.com:19302' }]},
                 debug: 1
             });
 
-            // Set a timeout: if server doesn't respond in 5 seconds, it's a Server Error
-            const netTimeout = setTimeout(() => {
-                if(!peer.open) {
-                    log("SERVER UNRESPONSIVE. PeerJS Cloud might be down.", "off");
-                    setStatus('server', 'off', 'TIMED OUT');
-                }
-            }, 5000);
-
-            peer.on('open', () => {
-                clearTimeout(netTimeout);
-                setStatus('server', 'on');
-                setStatus('room', 'on', hostMode ? 'HOSTING' : 'READY');
-                log(hostMode ? "LOBBY CREATED" : "CONNECTED TO CLOUD");
-                if(!hostMode) {
-                    log("LOOKING FOR HOST...");
-                    conn = peer.connect("fat_v4_" + id);
-                    setup(conn);
+            peer.on('open', (id) => {
+                document.getElementById('net-dot').className = 'dot active';
+                document.getElementById('room-status').innerText = hosting ? "HOSTING: " + rawId : "READY";
+                log(hosting ? "LOBBY CREATED ON CLOUD" : "READY TO CONNECT");
+                if(!hosting) {
+                    log("HANDSHAKING WITH HOST...");
+                    conn = peer.connect(finalId, { reliable: true });
+                    bindConn(conn);
                 }
             });
 
             peer.on('connection', (c) => {
                 conn = c; isHost = true;
-                log("PLAYER JOINED");
+                log("PLAYER CONNECTED TO LOBBY");
                 document.getElementById('host-tools').style.display = 'block';
-                setup(conn);
+                bindConn(conn);
             });
 
             peer.on('error', (err) => {
-                log("NET ERROR: " + err.type);
-                setStatus('server', 'off', err.type);
-                if(err.type === 'unavailable-id') alert("NAME TAKEN! TRY A DIFFERENT NAME.");
+                log("NET ERROR: " + err.type.toUpperCase());
+                if(err.type === 'unavailable-id') alert("ROOM TAKEN! PICK A NEW NAME.");
+                document.getElementById('net-dot').className = 'dot';
             });
+
+            // HEARTBEAT SYSTEM: Stops "Network Error" by keeping connection alive
+            setInterval(() => { if(peer && !peer.disconnected) peer.socket.send({type: 'HEARTBEAT'}); }, 5000);
         }
 
-        function setup(c) {
+        function bindConn(c) {
             c.on('open', () => {
-                document.getElementById('lobby-ui').style.display = 'none';
-                document.getElementById('game-ui').style.display = 'block';
+                document.getElementById('lobby').style.display = 'none';
+                document.getElementById('game').style.display = 'block';
                 document.getElementById('scoreboard').style.display = 'block';
             });
             c.on('data', (d) => {
-                if(d.type === 'WORD') {
-                    curWord = d.w; document.getElementById('word').innerText = d.w;
-                    document.getElementById('type-box').value = ""; document.getElementById('type-box').disabled = false;
-                    document.getElementById('type-box').focus(); document.getElementById('type-box').style.display = 'block';
-                    document.getElementById('opp-view').style.display = 'none';
-                    document.getElementById('msg').innerText = "";
+                if(d.type === 'ROUND_START') {
+                    currentWord = d.word; document.getElementById('word-target').innerText = d.word;
+                    resetUIForRound();
                 }
-                if(d.type === 'LIVE') {
+                if(d.type === 'TYPING') {
                     document.getElementById('type-box').style.display = 'none';
-                    document.getElementById('opp-view').style.display = 'block';
-                    document.getElementById('opp-text').innerText = d.v;
-                    if(d.t) document.getElementById('timer').innerText = d.t;
+                    document.getElementById('enemy-spectate').style.display = 'block';
+                    document.getElementById('enemy-text').innerText = d.val;
+                    if(d.time) document.getElementById('main-timer').innerText = d.time;
                 }
-                if(d.type === 'DONE') { oppT = parseFloat(d.t); if(isHost) check(); }
+                if(d.type === 'DONE') { oppTime = parseFloat(d.time); if(isHost) judgeWinner(); }
                 if(d.type === 'SYNC') {
-                    myS = d.s1; oppS = d.s2;
-                    document.getElementById('sc-me').innerText = myS;
-                    document.getElementById('sc-opp').innerText = oppS;
-                    document.getElementById('msg').innerText = d.msg;
-                    if(d.win) updateBal(50);
-                    if(d.over) {
-                        document.getElementById('word').innerText = d.fin;
+                    scores.me = d.s1; scores.opp = d.s2;
+                    document.getElementById('s-me').innerText = scores.me;
+                    document.getElementById('s-opp').innerText = scores.opp;
+                    document.getElementById('round-msg').innerText = d.msg;
+                    if(d.wonRound) updateBal(100);
+                    if(d.matchOver) {
+                        document.getElementById('word-target').innerText = d.final;
                         document.getElementById('type-box').style.display = 'none';
-                        if(d.fin.includes("MVP")) updateBal(200);
                     }
                 }
             });
         }
 
-        function startMatch() { next(); }
-        function next() {
-            const list = ["BOMB", "FLASH", "ENTRY", "RUSH", "ACE", "CLUTCH", "PLANT", "DEFUSE"];
-            const w = list[Math.floor(Math.random()*list.length)];
-            myT = 999; oppT = 999;
-            conn.send({type: 'WORD', w: w});
-            local(w);
+        // --- GAME LOGIC ---
+        function startGame() { startRound(); }
+
+        function startRound() {
+            const words = ["BOMB", "FLASH", "DEAGLE", "RUSH", "ACE", "CLUTCH", "PLANT", "DEFUSE", "SMOKE", "KNIFE"];
+            const w = words[Math.floor(Math.random()*words.length)];
+            myTime = 999; oppTime = 999;
+            conn.send({type: 'ROUND_START', word: w});
+            localRound(w);
         }
 
-        function local(w) {
-            curWord = w; document.getElementById('word').innerText = w;
-            document.getElementById('type-box').value = ""; document.getElementById('type-box').disabled = false;
-            document.getElementById('type-box').focus(); document.getElementById('timer').innerText = "0.000";
+        function localRound(w) {
+            currentWord = w;
+            document.getElementById('word-target').innerText = w;
+            resetUIForRound();
+        }
+
+        function resetUIForRound() {
+            document.getElementById('type-box').value = ""; 
+            document.getElementById('type-box').disabled = false;
+            document.getElementById('type-box').focus(); 
             document.getElementById('type-box').style.display = 'block';
-            document.getElementById('opp-view').style.display = 'none';
+            document.getElementById('enemy-spectate').style.display = 'none';
+            document.getElementById('main-timer').innerText = "0.000";
+            document.getElementById('round-msg').innerText = "";
         }
 
         document.getElementById('type-box').oninput = (e) => {
-            const v = e.target.value.toUpperCase();
-            if(v.length === 1) {
-                startT = performance.now();
-                tInt = setInterval(() => {
-                    const diff = ((performance.now() - startT) / 1000).toFixed(3);
-                    document.getElementById('timer').innerText = diff;
-                    conn.send({type: 'LIVE', v: v, t: diff});
+            const val = e.target.value.toUpperCase();
+            if(!typing && val.length > 0) {
+                typing = true; startTime = performance.now();
+                timerInterval = setInterval(() => {
+                    const diff = ((performance.now() - startTime) / 1000).toFixed(3);
+                    document.getElementById('main-timer').innerText = diff;
+                    conn.send({type: 'TYPING', val: val, time: diff});
                 }, 10);
             }
-            if(v === curWord) {
-                clearInterval(tInt); myT = parseFloat(document.getElementById('timer').innerText);
+            conn.send({type: 'TYPING', val: val});
+            if(val === currentWord) {
+                clearInterval(timerInterval); typing = false;
+                myTime = parseFloat(document.getElementById('main-timer').innerText);
                 document.getElementById('type-box').disabled = true;
-                if(isHost) check(); else conn.send({type: 'DONE', t: myT});
+                if(isHost) judgeWinner(); else conn.send({type: 'DONE', time: myTime});
             }
         };
 
-        function check() {
-            if(myT === 999 || oppT === 999) return;
-            let win = myT < oppT;
-            if(win) myS++; else oppS++;
-            let over = myS >= 3 || oppS >= 3;
-            let fin = myS >= 3 ? "MATCH MVP (+$200)" : "MATCH LOST";
-            conn.send({type: 'SYNC', s1: oppS, s2: myS, msg: win ? "LOST" : "WON (+$50)", over: over, fin: fin, win: !win});
-            document.getElementById('sc-me').innerText = myS;
-            document.getElementById('sc-opp').innerText = oppS;
-            document.getElementById('msg').innerText = win ? "WON (+$50)" : "LOST";
-            if(win) updateBal(50);
+        function judgeWinner() {
+            if(myTime === 999 || oppTime === 999) return;
+            let win = myTime < oppTime;
+            if(win) scores.me++; else scores.opp++;
+            let over = scores.me >= 3 || scores.opp >= 3;
+            let fin = scores.me >= 3 ? "MATCH MVP (+$500)" : "MATCH LOST";
+            
+            conn.send({type: 'SYNC', s1: scores.opp, s2: scores.me, msg: win ? "LOST" : "WON (+$100)", matchOver: over, final: fin, wonRound: !win});
+            document.getElementById('s-me').innerText = scores.me;
+            document.getElementById('s-opp').innerText = scores.opp;
+            document.getElementById('round-msg').innerText = win ? "WON (+$100)" : "LOST";
+            if(win) updateBal(100);
             if(over) {
-                document.getElementById('word').innerText = fin;
-                if(myS >= 3) updateBal(200);
-            } else setTimeout(next, 2000);
+                document.getElementById('word-target').innerText = fin;
+                if(scores.me >= 3) updateBal(500);
+            } else setTimeout(startRound, 2500);
         }
 
-        function buy(item, price) {
-            if(bal >= price) { updateBal(-price); alert("EQUIPPED!"); } else alert("NO MONEY");
+        function buyItem(name, price) {
+            if(bal >= price) { updateBal(-price); alert("EQUIPPED: " + name); }
+            else alert("NEED MORE CASH");
         }
     </script>
 </body>
