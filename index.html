@@ -3,103 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAT: Custom Room Edition</title>
+    <title>FAT: Global Offensive</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --mc-bg: #212121; --mc-green: #55FF55; --mc-red: #FF5555; --mc-yellow: #FFFF55; --mc-gold: #FFD700; --mc-blue: #55FFFF; }
-        body { font-family: 'Courier New', monospace; background-color: #1a1a1a; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; text-align: center; }
-        .game-box { background-color: #313131; border: 4px solid #000; padding: 20px; width: 90%; max-width: 500px; box-shadow: 8px 8px 0px #000; position: relative; }
-        .scoreboard { display: none; background: #222; border: 4px solid #000; padding: 10px; margin-bottom: 15px; width: 100%; max-width: 500px; flex-direction: column; }
-        #master-timer { font-size: 32px; color: var(--mc-blue); font-weight: bold; margin-bottom: 10px; text-shadow: 2px 2px #000; }
-        #word-display { font-size: 60px; color: var(--mc-yellow); text-shadow: 4px 4px #000; margin: 10px 0; }
-        .mc-btn { background-color: #333; color: white; border: 4px solid #000; padding: 10px 15px; cursor: pointer; margin: 5px; font-weight: bold; box-shadow: 3px 3px 0px #000; }
-        .panel { background: #313131; border: 4px solid #000; padding: 15px; width: 90%; max-width: 480px; display: block; margin-top: 10px; }
-        input { width: 85%; background: #4a4a4a; border: 4px solid #000; padding: 12px; color: white; font-size: 18px; text-align: center; outline: none; margin: 5px 0; }
-        #spectator-screen { display: none; background: #000; border: 2px dashed var(--mc-blue); padding: 15px; margin-top: 10px; }
-        #opp-live-text { font-size: 30px; color: #fff; text-transform: uppercase; min-height: 40px; }
-        .winner-pop { color: var(--mc-gold); font-size: 24px; font-weight: bold; margin-top: 10px; min-height: 30px; }
-        #conn-status { font-size: 12px; color: var(--mc-green); margin-bottom: 10px; }
+        :root {
+            --cs-orange: #de9b35; --cs-bg: #1b1e20; --cs-panel: #24292d;
+            --cs-border: #3c4146; --cs-text: #cccccc; --cs-white: #ffffff;
+            --cs-ct: #add1e7; --cs-t: #ebd184;
+        }
+        body {
+            background-color: var(--cs-bg); color: var(--cs-text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        /* CS2 Header Style */
+        .header { width: 100%; max-width: 600px; display: flex; justify-content: space-between; border-bottom: 2px solid var(--cs-border); padding-bottom: 10px; margin-bottom: 20px; }
+        .score-container { display: none; width: 100%; max-width: 600px; background: rgba(0,0,0,0.5); border: 1px solid var(--cs-border); padding: 10px; margin-bottom: 20px; border-top: 3px solid var(--cs-orange); }
+        .score-row { display: flex; justify-content: space-around; align-items: center; }
+        .score-val { font-size: 32px; font-weight: 800; color: var(--cs-white); }
+        .timer-large { font-size: 24px; color: var(--cs-orange); font-weight: bold; font-family: monospace; }
+
+        /* Tactical UI Panels */
+        .panel { background: var(--cs-panel); border: 1px solid var(--cs-border); padding: 20px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .input-field { width: 100%; background: #141619; border: 1px solid var(--cs-border); padding: 12px; color: white; margin: 10px 0; box-sizing: border-box; outline: none; transition: 0.3s; }
+        .input-field:focus { border-color: var(--cs-orange); }
+        
+        .cs-btn {
+            background: linear-gradient(to bottom, #4a4f55, #2d3237); color: white; border: 1px solid var(--cs-border);
+            padding: 10px 20px; cursor: pointer; font-weight: bold; margin: 5px; transition: 0.2s;
+        }
+        .cs-btn:hover { background: var(--cs-orange); color: black; border-color: white; }
+        .cs-btn-primary { background: var(--cs-orange); color: black; border: none; width: 100%; font-size: 16px; margin-top: 15px; }
+
+        /* Game Area */
+        #main-game { display: none; width: 100%; max-width: 500px; }
+        .word-box { background: rgba(0,0,0,0.8); padding: 40px; border: 1px solid var(--cs-border); margin: 20px 0; border-left: 5px solid var(--cs-orange); }
+        #word-display { font-size: 50px; font-weight: 900; color: var(--cs-white); }
+        
+        #spectator-screen { display: none; border: 2px solid var(--cs-orange); padding: 20px; background: rgba(222, 155, 53, 0.1); }
+        #opp-live-text { font-size: 30px; color: var(--cs-orange); min-height: 40px; }
+        
+        #status { font-size: 11px; color: #666; margin-top: 15px; }
+        .winner-msg { color: var(--cs-orange); font-size: 20px; font-weight: bold; margin-top: 15px; height: 30px; }
     </style>
 </head>
 <body>
 
-    <div style="margin-bottom: 10px;">
-        <button class="mc-btn" onclick="location.reload()">🔃 RESET GAME</button>
+    <div class="header">
+        <span style="color: var(--cs-orange); font-weight: bold;">FAT // GLOBAL OFFENSIVE</span>
+        <span id="match-goal-tag">PRE-MATCH</span>
     </div>
 
-    <div id="scoreboard-ui" class="scoreboard">
-        <div id="target-txt" style="color: var(--mc-gold); font-size: 12px;">FIRST TO 0</div>
-        <div style="display:flex; justify-content:space-around; font-size: 20px;">
-            <div>YOU: <span id="my-score" style="color:var(--mc-green)">0</span></div>
-            <div>OPP: <span id="opp-score" style="color:var(--mc-green)">0</span></div>
+    <div id="scoreboard-ui" class="score-container">
+        <div class="score-row">
+            <div style="color: var(--cs-ct)">CT (YOU): <span id="my-score" class="score-val">0</span></div>
+            <div id="master-timer" class="timer-large">0.000</div>
+            <div style="color: var(--cs-t)">T (OPP): <span id="opp-score" class="score-val">0</span></div>
         </div>
     </div>
 
     <div id="multi-panel" class="panel">
         <div id="setup-area">
-            <h3>MULTIPLAYER SETUP</h3>
-            <div id="conn-status">Checking Connection...</div>
-            <input type="text" id="custom-id-input" placeholder="Type a Room Name (ex: jude123)">
-            <div style="display:flex; justify-content:center;">
-                <button class="mc-btn" id="host-btn" style="color:var(--mc-green)">HOST ROOM</button>
-                <button class="mc-btn" id="join-btn" style="color:var(--mc-blue)">JOIN ROOM</button>
+            <h2 style="margin-top: 0;">LOBBY</h2>
+            <div id="status">OFFLINE - CONNECT TO NETWORK</div>
+            <input type="text" id="custom-id-input" class="input-field" placeholder="ENTER ROOM CODE...">
+            <div style="display:flex; gap: 10px;">
+                <button class="cs-btn" id="host-btn" style="flex:1">CREATE LOBBY</button>
+                <button class="cs-btn" id="join-btn" style="flex:1">JOIN LOBBY</button>
             </div>
         </div>
         
         <div id="goal-screen" style="display:none;">
-            <h3 style="color:var(--mc-gold)">SET MATCH GOAL</h3>
-            <button class="mc-btn" onclick="setTarget(2)">2</button>
-            <button class="mc-btn" onclick="setTarget(3)">3</button>
-            <button class="mc-btn" onclick="setTarget(5)">5</button>
+            <h3 style="color:var(--cs-orange)">SELECT MATCH LENGTH</h3>
+            <button class="cs-btn" onclick="setTarget(3)">SHORT MATCH (3)</button>
+            <button class="cs-btn" onclick="setTarget(5)">MEDIUM MATCH (5)</button>
+            <button class="cs-btn" onclick="setTarget(9)">LONG MATCH (9)</button>
         </div>
     </div>
 
-    <div class="game-box" id="main-game" style="display:none;">
-        <div id="master-timer">0.000s</div>
+    <div id="main-game">
         <div id="spectator-screen">
-            <div style="font-size: 12px; color:var(--mc-blue)">OPPONENT TYPING...</div>
+            <div style="font-size: 11px; margin-bottom: 10px;">SPECTATING ENEMY...</div>
             <div id="opp-live-text"></div>
         </div>
-        <div id="play-area">
-            <div id="word-display">READY?</div>
-            <input type="text" id="type-input" placeholder="Start typing..." autocomplete="off">
+        
+        <div id="play-area" class="word-box">
+            <div id="word-display">READY</div>
+            <input type="text" id="type-input" class="input-field" placeholder="TYPE HERE..." style="text-align: center; font-size: 24px;" autocomplete="off">
         </div>
-        <div id="round-winner" class="winner-pop"></div>
+        <div id="round-winner" class="winner-msg"></div>
     </div>
 
     <script>
-        const wordList = ["FAT", "JUDE", "MAX", "CHRIS"];
+        const wordList = ["FAT", "JUDE", "MAX", "CHRIS", "BOMB", "FLASH", "ENTRY", "RUSH"];
         let peer, conn, isHost = false, scores = { me: 0, opp: 0, target: 3 };
         let currentWord = "", startTime, timerInterval, active = false, myLastTime = 999, oppLastTime = 999;
 
-        const statusTxt = document.getElementById('conn-status');
+        const statusTxt = document.getElementById('status');
         const customIdBox = document.getElementById('custom-id-input');
 
-        // HOST BUTTON
-        document.getElementById('host-btn').onclick = () => {
-            const id = customIdBox.value.trim();
-            if(!id) return alert("Please type a Room Name first!");
-            startPeer(id, true);
-        };
-
-        // JOIN BUTTON
+        document.getElementById('host-btn').onclick = () => startPeer(customIdBox.value.trim(), true);
         document.getElementById('join-btn').onclick = () => {
-            const id = customIdBox.value.trim();
-            if(!id) return alert("Please type the Room Name to join!");
             startPeer(null, false);
             setTimeout(() => {
-                conn = peer.connect(id);
+                conn = peer.connect(customIdBox.value.trim());
                 bindEvents(conn);
-            }, 1000);
+            }, 800);
         };
 
         function startPeer(id, hosting) {
             if(peer) peer.destroy();
+            // Unique ID helper: appends a random number if name is taken
             peer = new Peer(id);
             
             peer.on('open', (openedId) => {
-                statusTxt.innerText = hosting ? "ROOM CREATED: " + openedId : "READY TO JOIN";
-                if(!hosting) statusTxt.innerText = "Attempting to join " + customIdBox.value + "...";
+                statusTxt.innerText = "LOBBY READY: " + openedId;
+                if(!hosting) statusTxt.innerText = "CONNECTING TO: " + customIdBox.value;
             });
 
             peer.on('connection', (c) => {
@@ -110,25 +130,28 @@
             });
 
             peer.on('error', (err) => {
-                alert("Room Error: " + err.type + ". Try a different Room Name.");
-                location.reload();
+                if(err.type === 'unavailable-id') {
+                    alert("ROOM NAME TAKEN. TRY ADDING A NUMBER (ex: " + customIdBox.value + "123)");
+                } else {
+                    alert("CONNECTION ERROR. REFRESH.");
+                }
             });
         }
 
         function bindEvents(c) {
             c.on('open', () => {
-                statusTxt.innerText = "MATCH CONNECTED!";
+                statusTxt.innerText = "MATCH FOUND - LOADING...";
+                document.getElementById('multi-panel').style.display = 'none';
                 document.getElementById('main-game').style.display = 'block';
             });
             c.on('data', (d) => {
                 if(d.type === 'START') {
                     scores.target = d.goal;
-                    document.getElementById('multi-panel').style.display = 'none';
-                    document.getElementById('scoreboard-ui').style.display = 'flex';
-                    document.getElementById('target-txt').innerText = "FIRST TO " + d.goal;
+                    document.getElementById('scoreboard-ui').style.display = 'block';
+                    document.getElementById('match-goal-tag').innerText = "BO" + d.goal;
                 }
                 if(d.type === 'TURN') {
-                    updateRoundUI(true);
+                    updateUI(true);
                     currentWord = d.w;
                     document.getElementById('word-display').innerText = d.w;
                     document.getElementById('type-input').disabled = false;
@@ -137,13 +160,13 @@
                     document.getElementById('round-winner').innerText = "";
                 }
                 if(d.type === 'LIVE') {
-                    updateRoundUI(false);
+                    updateUI(false);
                     document.getElementById('opp-live-text').innerText = d.v;
-                    if(d.time) document.getElementById('master-timer').innerText = d.time + "s";
+                    if(d.time) document.getElementById('master-timer').innerText = d.time;
                 }
                 if(d.type === 'FINISH') {
                     oppLastTime = parseFloat(d.time);
-                    if(isHost) checkWinner();
+                    if(isHost) checkRound();
                 }
                 if(d.type === 'SYNC') {
                     scores.me = d.s1; scores.opp = d.s2;
@@ -158,9 +181,8 @@
         function setTarget(n) {
             scores.target = n;
             conn.send({type: 'START', goal: n});
-            document.getElementById('multi-panel').style.display = 'none';
-            document.getElementById('scoreboard-ui').style.display = 'flex';
-            document.getElementById('target-txt').innerText = "FIRST TO " + n;
+            document.getElementById('scoreboard-ui').style.display = 'block';
+            document.getElementById('match-goal-tag').innerText = "BO" + n;
             nextRound();
         }
 
@@ -169,20 +191,21 @@
             const w = wordList[Math.floor(Math.random()*wordList.length)];
             myLastTime = 999; oppLastTime = 999;
             conn.send({type: 'TURN', w: w});
-            setupRound(w);
+            startLocalTurn(w);
         }
 
-        function setupRound(w) {
-            updateRoundUI(true);
+        function startLocalTurn(w) {
+            updateUI(true);
             currentWord = w;
             document.getElementById('word-display').innerText = w;
             document.getElementById('type-input').disabled = false;
             document.getElementById('type-input').value = "";
             document.getElementById('type-input').focus();
             document.getElementById('round-winner').innerText = "";
+            document.getElementById('master-timer').innerText = "0.000";
         }
 
-        function updateRoundUI(isMe) {
+        function updateUI(isMe) {
             document.getElementById('play-area').style.display = isMe ? 'block' : 'none';
             document.getElementById('spectator-screen').style.display = isMe ? 'none' : 'block';
         }
@@ -193,7 +216,7 @@
                 active = true; startTime = performance.now();
                 timerInterval = setInterval(() => {
                     const elapsed = ((performance.now() - startTime) / 1000).toFixed(3);
-                    document.getElementById('master-timer').innerText = elapsed + "s";
+                    document.getElementById('master-timer').innerText = elapsed;
                     if(conn) conn.send({type: 'LIVE', v: val, time: elapsed});
                 }, 10);
             }
@@ -201,18 +224,18 @@
                 clearInterval(timerInterval); active = false;
                 myLastTime = parseFloat(document.getElementById('master-timer').innerText);
                 document.getElementById('type-input').disabled = true;
-                if(isHost) checkWinner();
+                if(isHost) checkRound();
                 else conn.send({type: 'FINISH', time: myLastTime});
             }
         };
 
-        function checkWinner() {
+        function checkRound() {
             if(myLastTime === 999 || oppLastTime === 999) return;
-            let msg = myLastTime < oppLastTime ? "YOU WERE FASTER!" : "OPPONENT WAS FASTER!";
+            let msg = myLastTime < oppLastTime ? "YOU WON THE ROUND" : "OPPONENT WON THE ROUND";
             if(myLastTime < oppLastTime) scores.me++; else scores.opp++;
             
             let over = scores.me >= scores.target || scores.opp >= scores.target;
-            let final = scores.me >= scores.target ? "MATCH WON!" : "MATCH LOST!";
+            let final = scores.me >= scores.target ? "MATCH MVP: YOU" : "MATCH LOST";
             
             conn.send({type: 'SYNC', s1: scores.opp, s2: scores.me, msg: msg, over: over, final: final});
             document.getElementById('my-score').innerText = scores.me;
