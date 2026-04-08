@@ -3,84 +3,350 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAT: Global Offensive</title>
+    <title>FAT: Panorama Shop Update</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
-            --cs-orange: #ff9a00; --cs-bg: #121417; --cs-panel: #1b1f23;
-            --cs-border: #32383e; --cs-text: #9ba1a6; --cs-white: #ffffff;
-            --cs-ct: #5da7db; --cs-t: #de9b35;
+            --cs-orange: #dca243; --cs-bg: #111316; --cs-panel-bg: rgba(27, 31, 35, 0.85);
+            --cs-border: #3f454b; --cs-text: #9ba1a6; --cs-white: #e8e8e8;
+            --cs-ct: #689ee2; --cs-t: #e1b453; --cs-red: #cc4343; --cs-green: #5cbf5c;
         }
         body {
-            background-color: var(--cs-bg); color: var(--cs-text);
-            font-family: 'Segoe UI', Arial, sans-serif;
-            display: flex; flex-direction: column; align-items: center; padding: 0; margin: 0;
-            height: 100vh; overflow: hidden; text-transform: uppercase;
+            background-color: var(--cs-bg); color: var(--cs-text); font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; text-transform: uppercase;
+            background-image: radial-gradient(circle at 50% 0%, #2a2e33 0%, #111316 60%);
         }
+        
+        /* Top Navigation */
         .navbar {
-            width: 100%; background: rgba(0,0,0,0.8); border-bottom: 1px solid var(--cs-border);
-            display: flex; justify-content: center; gap: 40px; padding: 15px 0; font-weight: 800;
+            display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8);
+            padding: 0 30px; height: 60px; border-bottom: 1px solid var(--cs-border); box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        .nav-item { cursor: pointer; color: var(--cs-text); transition: 0.2s; font-size: 14px; }
-        .nav-item:hover { color: var(--cs-white); }
+        .nav-brand { font-size: 18px; font-weight: 900; color: var(--cs-white); letter-spacing: 2px; }
+        .nav-links { display: flex; gap: 30px; font-weight: 700; font-size: 14px; height: 100%; }
+        .nav-item { display: flex; align-items: center; cursor: pointer; color: var(--cs-text); border-bottom: 3px solid transparent; transition: 0.2s; }
+        .nav-item:hover, .nav-item.active { color: var(--cs-white); border-bottom: 3px solid var(--cs-orange); }
+        .wallet { color: var(--cs-green); font-family: monospace; font-size: 18px; font-weight: bold; display: flex; align-items: center; }
 
-        .scoreboard-overlay {
-            display: none; margin-top: 20px; width: 400px; background: rgba(20,20,20,0.9);
-            border: 1px solid var(--cs-border); padding: 5px 20px; border-radius: 4px;
-        }
-        .score-flex { display: flex; justify-content: space-between; align-items: center; }
-        .timer-val { font-size: 28px; color: var(--cs-orange); font-family: monospace; font-weight: bold; }
-        .score-num { font-size: 32px; font-weight: 900; color: white; }
+        /* Main Layout & Tabs */
+        .app-container { flex: 1; display: flex; flex-direction: column; align-items: center; padding-top: 40px; position: relative; }
+        .tab-view { display: none; width: 100%; max-width: 600px; flex-direction: column; align-items: center; }
+        .tab-view.active { display: flex; }
 
-        .main-container { margin-top: 50px; width: 90%; max-width: 450px; }
-        .panel { 
-            background: var(--cs-panel); border: 1px solid var(--cs-border); padding: 30px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        .input-box {
-            width: 100%; background: #000; border: 1px solid var(--cs-border); padding: 15px;
-            color: white; margin-bottom: 20px; outline: none; box-sizing: border-box; font-size: 16px;
-        }
-        .btn-prime {
-            background: var(--cs-orange); color: black; border: none; width: 100%;
-            padding: 15px; font-weight: 900; font-size: 18px; cursor: pointer;
-        }
-        .btn-repair {
-            background: transparent; color: #555; border: 1px solid #333; width: 100%;
-            padding: 5px; font-size: 10px; cursor: pointer; margin-top: 10px;
-        }
+        /* Tactical Panels */
+        .panel { background: var(--cs-panel-bg); backdrop-filter: blur(10px); border: 1px solid var(--cs-border); padding: 30px; width: 100%; max-width: 450px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); border-radius: 4px; box-sizing: border-box; }
+        .panel-header { font-size: 20px; font-weight: 800; color: var(--cs-white); margin-bottom: 20px; border-bottom: 1px solid var(--cs-border); padding-bottom: 10px; }
 
-        #game-area { display: none; width: 100%; max-width: 500px; margin-top: 40px; }
-        .word-display { font-size: 70px; font-weight: 900; color: white; margin-bottom: 30px; }
-        .spec-box { display: none; background: rgba(255,154,0,0.1); border: 1px solid var(--cs-orange); padding: 20px; }
-        #status-msg { font-size: 11px; color: var(--cs-orange); margin-bottom: 10px; font-weight: bold; }
+        /* Inputs & Buttons */
+        .cs-input { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--cs-border); padding: 12px 15px; color: var(--cs-white); font-size: 14px; outline: none; box-sizing: border-box; font-family: monospace; transition: 0.3s; margin-bottom: 15px;}
+        .cs-input:focus { border-color: var(--cs-orange); }
+        .btn-row { display: flex; gap: 10px; width: 100%; }
+        .btn { flex: 1; padding: 12px; font-weight: 800; font-size: 14px; cursor: pointer; border: none; transition: 0.2s; text-align: center; }
+        .btn-primary { background: var(--cs-orange); color: #000; box-shadow: inset 0 0 10px rgba(255,255,255,0.2); }
+        .btn-primary:hover { background: #edb458; transform: translateY(-1px); }
+        .btn-primary:disabled { background: #555; color: #222; cursor: not-allowed; }
+        .btn-secondary { background: #2a2e33; color: var(--cs-white); border: 1px solid var(--cs-border); }
+        .btn-secondary:hover { background: #3a3f46; }
+
+        /* Scoreboard */
+        #scoreboard { display: none; width: 100%; margin-bottom: 20px; }
+        .score-box { background: var(--cs-panel-bg); border: 1px solid var(--cs-border); display: flex; justify-content: space-between; align-items: center; padding: 10px 30px; }
+        .team-score { font-size: 36px; font-weight: 900; display: flex; flex-direction: column; align-items: center;}
+        .player-name { font-size: 12px; font-weight: bold; margin-top: 5px; color: var(--cs-text); }
+        .timer-display { font-family: monospace; font-size: 24px; color: var(--cs-orange); }
+
+        /* Game Area */
+        #game-view { display: none; width: 100%; }
+        .target-word { font-size: 60px; font-weight: 900; color: var(--cs-white); text-align: center; margin: 30px 0; letter-spacing: 2px; }
+        .spectator-box { border: 1px dashed var(--cs-orange); background: rgba(220,162,67,0.05); padding: 20px; text-align: center; display: none; margin-bottom: 20px; }
+
+        /* Shop Grid */
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
+        .shop-item { background: #1c1e22; border: 1px solid var(--cs-border); padding: 15px; display: flex; flex-direction: column; align-items: center; transition: 0.2s; }
+        .shop-item:hover { border-color: var(--cs-orange); }
+        .item-name { font-weight: bold; margin-bottom: 10px; font-size: 16px; text-align:center;}
+        .item-price { color: var(--cs-green); font-family: monospace; margin-bottom: 10px; }
+
+        /* Dev Console */
+        .dev-console { display: none; position: absolute; bottom: 0; width: 100%; height: 150px; background: rgba(10,11,12,0.95); border-top: 2px solid var(--cs-border); padding: 10px 20px; font-family: monospace; font-size: 12px; color: #00ff00; overflow-y: auto; flex-direction: column; gap: 5px; text-transform: none; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
     <div class="navbar">
-        <div class="nav-item">MATCHMAKING</div>
-        <div class="nav-item" onclick="location.reload()">FORCE REFRESH</div>
-    </div>
-
-    <div id="scoreboard-ui" class="scoreboard-overlay">
-        <div class="score-flex">
-            <div style="color: var(--cs-ct)">CT <span id="my-score" class="score-num">0</span></div>
-            <div id="master-timer" class="timer-val">0.000</div>
-            <div style="color: var(--cs-t)"><span id="opp-score" class="score-num">0</span> T</div>
+        <div class="nav-brand">FAT // OFFENSIVE</div>
+        <div class="nav-links">
+            <div class="nav-item active" onclick="nav('play')">PLAY</div>
+            <div class="nav-item" onclick="nav('shop')">SHOP</div>
+            <div class="nav-item" onclick="toggleConsole()">CONSOLE</div>
         </div>
+        <div class="wallet">BAL: $<span id="wallet-bal">0</span></div>
     </div>
 
-    <div class="main-container">
-        <div id="lobby-panel" class="panel">
-            <div id="status-msg">SYSTEM: READY</div>
-            <input type="text" id="room-input" class="input-box" placeholder="LOBBY NAME...">
+    <div class="app-container">
+        
+        <div id="tab-play" class="tab-view active">
             
-            <div style="display:flex; gap:10px;">
-                <button id="host-btn" class="btn-prime" style="background:#32383e; color:white;">HOST</button>
-                <button id="join-btn" class="btn-prime">JOIN</button>
+            <div id="scoreboard">
+                <div style="text-align:center; font-size:12px; font-weight:bold; color:var(--cs-orange); margin-bottom:5px;" id="match-goal">MATCH POINT: 3</div>
+                <div class="score-box">
+                    <div class="team-score">
+                        <span id="score-me" style="color:var(--cs-ct)">0</span>
+                        <div class="player-name" id="name-me">YOU</div>
+                    </div>
+                    <div class="timer-display" id="master-timer">0.000</div>
+                    <div class="team-score">
+                        <span id="score-opp" style="color:var(--cs-t)">0</span>
+                        <div class="player-name" id="name-opp">ENEMY</div>
+                    </div>
+                </div>
             </div>
-            
-            <button class="btn-repair" onclick="reconnectSystem()">FIX NETWORK ERROR</button>
 
-            <div id="goal-selection" style="display
+            <div class="panel" id="lobby-view">
+                <div class="panel-header">MATCHMAKING LOBBY</div>
+                <label style="font-size: 10px; color: var(--cs-text);">ROOM CODE (LETTERS & NUMBERS ONLY)</label>
+                <input type="text" id="room-id" class="cs-input" placeholder="e.g. server123" maxlength="12">
+                <div class="btn-row">
+                    <button class="btn btn-secondary" id="btn-host">HOST</button>
+                    <button class="btn btn-primary" id="btn-join">JOIN</button>
+                </div>
+                <div id="host-options" style="display:none; margin-top:20px; border-top:1px solid var(--cs-border); padding-top:20px;">
+                    <div style="font-size: 10px; margin-bottom:10px;">SELECT MATCH LENGTH</div>
+                    <div class="btn-row">
+                        <button class="btn btn-secondary" onclick="startGame(3)">BO3</button>
+                        <button class="btn btn-secondary" onclick="startGame(5)">BO5</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="game-view">
+                <div id="play-area">
+                    <div class="target-word" id="current-word">WAITING...</div>
+                    <input type="text" id="type-box" class="cs-input" style="text-align:center; font-size:24px; padding:20px;" placeholder="TYPE TO SHOOT" disabled autocomplete="off">
+                </div>
+                <div class="spectator-box" id="spec-area">
+                    <div style="font-size:12px; color:var(--cs-orange); margin-bottom:10px;">SPECTATING ENEMY</div>
+                    <div id="enemy-text" style="font-size:30px; color:white; font-weight:bold; min-height:40px;"></div>
+                </div>
+                <div id="round-status" style="text-align:center; margin-top:20px; font-size:20px; font-weight:bold; color:var(--cs-orange);"></div>
+            </div>
+        </div>
+
+        <div id="tab-shop" class="tab-view">
+            <div class="panel" style="max-width: 600px; width: 100%;">
+                <div class="panel-header">BLACK MARKET EQUIPMENT</div>
+                <div class="shop-grid" id="shop-container">
+                    </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="dev-console" id="console-ui"></div>
+
+    <script>
+        // === CORE SYSTEMS & ECONOMY ===
+        let profile = JSON.parse(localStorage.getItem('fat_profile')) || { money: 0, inventory: [], equipped: { color: 'var(--cs-ct)', title: '' } };
+        
+        function saveProfile() { localStorage.setItem('fat_profile', JSON.stringify(profile)); updateWalletUI(); }
+        function addMoney(amt) { profile.money += amt; saveProfile(); csLog(`+$${amt} Added to wallet.`); }
+        function updateWalletUI() { 
+            document.getElementById('wallet-bal').innerText = profile.money;
+            applyEquipped();
+        }
+
+        const SHOP_ITEMS = [
+            { id: 't_pro', type: 'title', val: '[PRO]', name: 'PRO TAG', price: 250 },
+            { id: 't_god', type: 'title', val: '[GOD]', name: 'GOD TAG', price: 1000 },
+            { id: 'c_red', type: 'color', val: '#ff4444', name: 'CRIMSON INK', price: 500 },
+            { id: 'c_gold', type: 'color', val: '#ffd700', name: 'GOLD INK', price: 1500 }
+        ];
+
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            container.innerHTML = '';
+            SHOP_ITEMS.forEach(item => {
+                const isOwned = profile.inventory.includes(item.id);
+                const isEquipped = profile.equipped[item.type] === item.val;
+                
+                let btnHtml = `<button class="btn btn-primary" onclick="buyItem('${item.id}')">BUY</button>`;
+                if (isOwned) {
+                    btnHtml = isEquipped 
+                        ? `<button class="btn btn-secondary" disabled style="color:var(--cs-green)">EQUIPPED</button>`
+                        : `<button class="btn btn-secondary" onclick="equipItem('${item.id}')">EQUIP</button>`;
+                }
+
+                container.innerHTML += `
+                    <div class="shop-item">
+                        <div class="item-name" style="color:${item.type === 'color' ? item.val : 'white'}">${item.val} ${item.name}</div>
+                        <div class="item-price">${isOwned ? 'OWNED' : '$' + item.price}</div>
+                        ${btnHtml}
+                    </div>
+                `;
+            });
+        }
+
+        function buyItem(id) {
+            const item = SHOP_ITEMS.find(i => i.id === id);
+            if (profile.money >= item.price) {
+                profile.money -= item.price;
+                profile.inventory.push(id);
+                saveProfile(); renderShop();
+            } else { alert("Not enough funds!"); }
+        }
+
+        function equipItem(id) {
+            const item = SHOP_ITEMS.find(i => i.id === id);
+            if(item.type === 'color') profile.equipped.color = item.val;
+            if(item.type === 'title') profile.equipped.title = item.val;
+            saveProfile(); renderShop();
+            if(conn) conn.send({type: 'PROFILE', p: profile.equipped}); // Send new fit to opponent
+        }
+
+        function applyEquipped() {
+            const myNamePlate = document.getElementById('name-me');
+            myNamePlate.innerText = `${profile.equipped.title} YOU`;
+            myNamePlate.style.color = profile.equipped.color;
+        }
+
+        // === UI NAVIGATION ===
+        function nav(tab) {
+            document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            event.target.classList.add('active');
+            if(tab === 'shop') renderShop();
+        }
+        function toggleConsole() {
+            const c = document.getElementById('console-ui');
+            c.style.display = c.style.display === 'flex' ? 'none' : 'flex';
+        }
+        function csLog(msg) {
+            const c = document.getElementById('console-ui');
+            c.innerHTML += `<div>[SYS] ${msg}</div>`; c.scrollTop = c.scrollHeight;
+        }
+
+        // === GAME & NETWORK STATE ===
+        const WORDS = ["BOMB", "FLASH", "DEFUSE", "ENTRY", "RUSH", "SNIPER", "CLUTCH", "ACE", "SMOKE", "PLANT"];
+        let peer, conn, state = { host: false, target: 3, sMe: 0, sOpp: 0, myTime: 999, oppTime: 999, word: "", active: false };
+        let timerStart, timerInt;
+
+        document.getElementById('room-id').addEventListener('input', function() { this.value = this.value.replace(/[^a-zA-Z0-9]/g, '').toLowerCase(); });
+
+        function initNetwork(roomName, isHosting) {
+            if(peer) peer.destroy();
+            peer = new Peer(isHosting ? "f_cs_" + roomName : undefined);
+            
+            peer.on('open', (id) => {
+                csLog(`Network connected.`);
+                if (isHosting) { state.host = true; document.getElementById('host-options').style.display = 'block'; } 
+                else { conn = peer.connect("f_cs_" + roomName); setupConn(conn); }
+            });
+            peer.on('connection', (c) => { conn = c; setupConn(conn); });
+            peer.on('error', () => { alert("Network Error or Room Taken!"); });
+        }
+
+        document.getElementById('btn-host').onclick = () => initNetwork(document.getElementById('room-id').value, true);
+        document.getElementById('btn-join').onclick = () => initNetwork(document.getElementById('room-id').value, false);
+
+        function setupConn(c) {
+            c.on('open', () => {
+                document.getElementById('lobby-view').style.display = 'none';
+                document.getElementById('scoreboard').style.display = 'block';
+                document.getElementById('game-view').style.display = 'block';
+                c.send({type: 'PROFILE', p: profile.equipped}); // Send my skin to opponent
+            });
+
+            c.on('data', (d) => {
+                if(d.type === 'PROFILE') {
+                    const opp = document.getElementById('name-opp');
+                    opp.innerText = `${d.p.title} ENEMY`; opp.style.color = d.p.color;
+                }
+                if(d.type === 'CFG') { state.target = d.limit; document.getElementById('match-goal').innerText = `BO${d.limit}`; }
+                if(d.type === 'TURN') startRound(d.word);
+                if(d.type === 'LIVE') updateSpec(d.val, d.t);
+                if(d.type === 'DONE') { state.oppTime = parseFloat(d.t); if(state.host) calcWinner(); }
+                if(d.type === 'SYNC') syncGame(d);
+            });
+        }
+
+        function startGame(limit) {
+            state.target = limit; document.getElementById('match-goal').innerText = `BO${limit}`;
+            conn.send({type: 'CFG', limit: limit}); nextRound();
+        }
+
+        function nextRound() {
+            if(state.sMe >= state.target || state.sOpp >= state.target) return;
+            const w = WORDS[Math.floor(Math.random() * WORDS.length)];
+            state.myTime = 999; state.oppTime = 999;
+            conn.send({type: 'TURN', word: w}); startRound(w);
+        }
+
+        function startRound(w) {
+            state.word = w; document.getElementById('current-word').innerText = w;
+            const tb = document.getElementById('type-box');
+            tb.disabled = false; tb.value = ""; tb.focus();
+            document.getElementById('round-status').innerText = "";
+            document.getElementById('master-timer').innerText = "0.000";
+            document.getElementById('play-area').style.display = 'block';
+            document.getElementById('spec-area').style.display = 'none';
+        }
+
+        function updateSpec(val, t) {
+            document.getElementById('play-area').style.display = 'none';
+            document.getElementById('spec-area').style.display = 'block';
+            document.getElementById('enemy-text').innerText = val;
+            if(t) document.getElementById('master-timer').innerText = t;
+        }
+
+        document.getElementById('type-box').addEventListener('input', (e) => {
+            const val = e.target.value.toUpperCase();
+            if(!state.active && val.length > 0) {
+                state.active = true; timerStart = performance.now();
+                timerInt = setInterval(() => {
+                    const elap = ((performance.now() - timerStart) / 1000).toFixed(3);
+                    document.getElementById('master-timer').innerText = elap;
+                    if(conn) conn.send({type: 'LIVE', val: val, t: elap});
+                }, 10);
+            }
+            if(val === state.word) {
+                clearInterval(timerInt); state.active = false;
+                state.myTime = parseFloat(document.getElementById('master-timer').innerText);
+                document.getElementById('type-box').disabled = true;
+                if(state.host) calcWinner(); else conn.send({type: 'DONE', t: state.myTime});
+            }
+        });
+
+        function calcWinner() {
+            if(state.myTime === 999 || state.oppTime === 999) return;
+            let msg = state.myTime < state.oppTime ? "ROUND WON (+$50)" : "ROUND LOST";
+            if(state.myTime < state.oppTime) state.sMe++; else state.sOpp++;
+            let over = state.sMe >= state.target || state.sOpp >= state.target;
+            
+            const payload = {type: 'SYNC', s1: state.sOpp, s2: state.sMe, msg: msg, over: over, w: state.sMe >= state.target};
+            conn.send(payload); syncGame(payload);
+        }
+
+        function syncGame(d) {
+            state.sMe = d.s1; state.sOpp = d.s2;
+            document.getElementById('score-me').innerText = state.sMe;
+            document.getElementById('score-opp').innerText = state.sOpp;
+            
+            // Economy Payouts
+            if(d.msg.includes("WON")) addMoney(50);
+            document.getElementById('round-status').innerText = d.msg;
+
+            if(d.over) {
+                let finalMsg = d.w ? "MATCH MVP: YOU (+$250)" : "MATCH LOST";
+                if(d.w) addMoney(250);
+                document.getElementById('current-word').innerText = finalMsg;
+                document.getElementById('type-box').style.display = 'none';
+            } else if (state.host) { setTimeout(nextRound, 2500); }
+        }
+
+        // Initialize
+        updateWalletUI();
+        renderShop();
+    </script>
+</body>
+</html>
